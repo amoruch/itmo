@@ -1,0 +1,27 @@
+# Java build output
+bin/
+build/
+out/
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# IDE settings and workspace files
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
