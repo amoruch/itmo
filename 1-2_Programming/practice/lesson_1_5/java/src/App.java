@@ -1,136 +1,172 @@
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Урок 1.5 — полиморфизм и интерфейсы.
  */
 public class App {
 
     public static void main(String[] args) {
-        // Полиморфизм подтипов: одна ссылка Shape — разные реальные объекты.
-        Shape[] shapes = { new Rectangle(2, 3), new Square(4), new Circle(1.5) };
-        for (Shape s : shapes) {
-            System.out.printf("%s area=%.2f per=%.2f%n", s, s.area(), s.perimeter());
+        part1();
+        part2();
+        part3();
+        part4();
+        part5();
+        part6();
+        part7();
+        part8();
+        part9();
+    }
+
+    private static void part1() {
+        System.out.println("1. Полиморфизм подтипов");
+
+        Shape[] shapes = {
+            new Rectangle(4, 3),
+            new Circle(2)
+        };
+
+        for (Shape shape : shapes) {
+            System.out.println(shape.description());
+        }
+    }
+
+    private static void part2() {
+        System.out.println("\n2. Абстрактный класс как общий тип");
+
+        printShape(new Rectangle(2, 6));
+        printShape(new Circle(1));
+
+        // Shape shape = new Shape(); // Абстрактный класс нельзя создать через new.
+    }
+
+    private static void part3() {
+        System.out.println("\n3. Интерфейсы и несколько аспектов поведения");
+
+        Flyable[] flying = {new Duck(), new Airplane()};
+        for (Flyable object : flying) {
+            object.fly();
         }
 
-        // Динамическое связывание: метод выбирается по реальному типу объекта.
-
-        // Абстрактный класс — нельзя new, но можно ссылку. Общий код + abstract методы.
-        // Shape s = new Shape(); // ошибка
-
-        // Интерфейс — контракт без состояния. Класс реализует сколько угодно интерфейсов.
-        Flyable[] flying = { new Bird(), new Airplane(), new FlyingFish() };
-        for (Flyable f : flying) f.fly();
-
-        // Методы интерфейса: abstract (по умолчанию), default, static, private.
         Duck duck = new Duck();
-        duck.swim();   // abstract
-        duck.walk();   // default из Walkable
-        duck.fly();    // default из Flyable
+        duck.swim();
+        duck.land();
+        Flyable.rules();
+    }
 
-        // Comparator — внешний порядок; Comparable — естественный.
-        String[] dow = { "sunday", "monday", "tuesday", "friday" };
-        java.util.Arrays.sort(dow, new java.util.Comparator<String>() {
-            @Override public int compare(String a, String b) {
-                return a.length() - b.length(); // анонимный класс
+    private static void part4() {
+        System.out.println("\n4. Comparable и Comparator");
+
+        Task[] tasks = {
+            new Task("Сделать лабораторную", 2),
+            new Task("Прочитать лекцию", 1),
+            new Task("Повторить Java", 3)
+        };
+
+        Arrays.sort(tasks);
+        System.out.println("Естественный порядок: " + Arrays.toString(tasks));
+
+        Arrays.sort(tasks, new Comparator<Task>() {
+            @Override
+            public int compare(Task first, Task second) {
+                int priorityComparison = Integer.compare(first.priority(), second.priority());
+                return priorityComparison != 0
+                        ? priorityComparison
+                        : first.name().compareTo(second.name());
             }
         });
-        System.out.println(java.util.Arrays.toString(dow));
+        System.out.println("По приоритету: " + Arrays.toString(tasks));
+    }
 
-        // Вложенные классы: static, inner, local, anonymous.
-        Outer.StaticNested sn = new Outer.StaticNested(); // без экземпляра Outer
-        Outer outer = new Outer();
-        Outer.Inner inner = outer.new Inner();            // связан с экземпляром
-        System.out.println(sn + " " + inner);
+    private static void part5() {
+        System.out.println("\n5. Вложенные и анонимные классы");
 
-        // ArrayList — динамический массив, только ссылочные типы.
-        var list = new java.util.ArrayList<Integer>();
-        list.add(1); list.add(2); list.add(0, 0);
-        System.out.println(list + " size=" + list.size());
+        Outer.Label label = new Outer.Label("static nested");
+        Outer outer = new Outer(10);
+        Outer.Counter counter = outer.new Counter();
+        System.out.println(label.text());
+        System.out.println("Поле Outer: " + counter.outerValue());
+        System.out.println(outer.localClassMessage());
 
-        // List.of — неизменяемый; чтобы менять — обернуть в ArrayList.
-        var fixed = java.util.List.of(1, 2, 3);
-        var mutable = new java.util.ArrayList<>(fixed);
+        Runnable greeting = new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("Привет из анонимного класса");
+            }
+        };
+        greeting.run();
+    }
+
+    private static void part6() {
+        System.out.println("\n6. ArrayList и List.of");
+
+        ArrayList<String> subjects = new ArrayList<>();
+        subjects.add("Java");
+        subjects.add("Алгоритмы");
+        subjects.add(1, "Дискретная математика");
+        subjects.set(0, "Программирование");
+        subjects.remove(2);
+        System.out.println(subjects + ", размер: " + subjects.size());
+
+        List<Integer> fixed = List.of(1, 2, 3);
+        ArrayList<Integer> mutable = new ArrayList<>(fixed);
         mutable.add(4);
-
-        // Сканер: разбор ввода по строкам и числам.
-        var sc = new java.util.Scanner("10 20\n30 40");
-        while (sc.hasNextInt()) System.out.print(sc.nextInt() + " ");
-        System.out.println();
-        sc.close();
-
-        // java.time (Java 8+): LocalDate / LocalTime / LocalDateTime / ZonedDateTime / Period / Duration.
-        var d1 = java.time.LocalDate.of(2026, 3, 10);
-        var d2 = java.time.LocalDate.parse("2026-01-01");
-        var firstOfMonth = java.time.LocalDate.now()
-                .with(java.time.temporal.TemporalAdjusters.firstDayOfMonth());
-
-        var dt = java.time.LocalDateTime.now().minusHours(2).plusMinutes(30);
-        var moscow = java.time.ZonedDateTime.of(dt, java.time.ZoneId.of("Europe/Moscow"));
-
-        var period = java.time.Period.between(d2, d1);                  // P2M9D
-        var duration = java.time.Duration.between(dt, java.time.LocalDateTime.now());
-        System.out.println(period + " / " + duration + " / " + moscow.getZone());
-
-        // Regex: Pattern + Matcher; группы захвата через скобки.
-        var m = java.util.regex.Pattern.compile("(\\w+)@(\\w+\\.)+\\w{2,}")
-                .matcher("user@se.itmo.ru");
-        if (m.matches()) System.out.println("user=" + m.group(1));
+        System.out.println("Неизменяемый: " + fixed + "; изменяемый: " + mutable);
     }
 
-    // --- Абстрактный класс Shape -----------------------------------------
+    private static void part7() {
+        System.out.println("\n7. Scanner");
 
-    abstract static class Shape {
-        public abstract double area();
-        public abstract double perimeter();
-        @Override public String toString() { return getClass().getSimpleName(); }
-    }
-
-    static class Rectangle extends Shape {
-        protected double width, height;
-        Rectangle(double w, double h) { width = w; height = h; }
-        @Override public double area() { return width * height; }
-        @Override public double perimeter() { return 2 * (width + height); }
-    }
-
-    static class Square extends Rectangle {
-        Square(double side) { super(side, side); }
-        @Override public String toString() { return "Square"; }
-    }
-
-    static class Circle extends Shape {
-        private final double r;
-        Circle(double r) { this.r = r; }
-        @Override public double area() { return Math.PI * r * r; }
-        @Override public double perimeter() { return 2 * Math.PI * r; }
-    }
-
-    // --- Интерфейсы ------------------------------------------------------
-
-    interface Flyable {
-        void fly(); // public abstract по умолчанию
-        default void land() { System.out.println("landing..."); }
-        static Flyable of() { return new Bird(); } // static — принадлежит интерфейсу
-    }
-
-    interface Swimmable { void swim(); }
-    interface Walkable  { default void walk() { System.out.println("walk"); } }
-
-    /** Класс реализует несколько интерфейсов — разные аспекты поведения. */
-    static class Duck implements Flyable, Swimmable, Walkable {
-        @Override public void fly()  { System.out.println("duck fly"); }
-        @Override public void swim() { System.out.println("duck swim"); }
-    }
-
-    static class Bird   implements Flyable { @Override public void fly() { System.out.println("bird fly"); } }
-    static class Airplane implements Flyable { @Override public void fly() { System.out.println("plane fly"); } }
-    static class FlyingFish implements Flyable { @Override public void fly() { System.out.println("fish fly"); } }
-
-    // --- Вложенные классы ------------------------------------------------
-
-    static class Outer {
-        static class StaticNested {}                 // static — без экземпляра Outer
-        class Inner {}                               // inner — связан с Outer
-        void m() {
-            class Local {}                           // local — виден только в методе
-            new Local();
+        try (Scanner scanner = new Scanner("10 20\n30 40")) {
+            int sum = 0;
+            while (scanner.hasNextInt()) {
+                sum += scanner.nextInt();
+            }
+            System.out.println("Сумма чисел: " + sum);
         }
+    }
+
+    private static void part8() {
+        System.out.println("\n8. Дата и время");
+
+        LocalDate start = LocalDate.of(2026, 3, 10);
+        LocalDate deadline = LocalDate.parse("2026-05-01");
+        LocalDate firstDay = start.with(TemporalAdjusters.firstDayOfMonth());
+        LocalTime time = LocalTime.of(10, 30).plusMinutes(45);
+        LocalDateTime meeting = LocalDateTime.of(start, time);
+        ZonedDateTime moscowMeeting = meeting.atZone(ZoneId.of("Europe/Moscow"));
+
+        System.out.println("Первый день месяца: " + firstDay);
+        System.out.println("До дедлайна: " + Period.between(start, deadline));
+        System.out.println("Встреча: " + moscowMeeting);
+        System.out.println("Длительность пары: " + Duration.ofMinutes(95));
+    }
+
+    private static void part9() {
+        System.out.println("\n9. Регулярные выражения");
+
+        Pattern emailPattern = Pattern.compile("(\\w+)@(\\w+\\.)+\\w{2,}");
+        Matcher matcher = emailPattern.matcher("student@se.itmo.ru");
+
+        if (matcher.matches()) {
+            System.out.println("Логин: " + matcher.group(1));
+        }
+    }
+
+    private static void printShape(Shape shape) {
+        System.out.println(shape.description());
     }
 }

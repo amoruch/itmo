@@ -1,126 +1,135 @@
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 /**
- * Урок 1.6 — исключения, дизайн, чистый код.
+ * Урок 1.6 — исключения и чистый код.
  */
 public class App {
 
+    private static final double VAT_RATE = 0.20;
+
     public static void main(String[] args) {
-        // Иерархия: Throwable -> Error / Exception -> RuntimeException.
-        // checked: Exception (кроме RuntimeException) — компилятор требует catch/throws.
-        // unchecked: RuntimeException, Error — на усмотрение программиста.
+        part1();
+        part2();
+        part3();
+        part4();
+        part5();
+        part6();
+    }
 
-        // try / catch / finally: finally выполняется всегда.
+    private static void part1() {
+        System.out.println("1. try, catch и finally");
+
         try {
-            int x = 1 / 0;
-        } catch (ArithmeticException e) {
-            System.out.println("division by zero");
+            int result = 10 / 0;
+            System.out.println(result);
+        } catch (ArithmeticException exception) {
+            System.out.println("Нельзя делить на ноль");
         } finally {
-            System.out.println("always");
+            System.out.println("finally выполняется всегда");
         }
 
-        // try-with-resources: закрывает AutoCloseable автоматически.
-        try (var res = new MyResource()) {
-            res.use();
-        } catch (Exception e) {
-            System.out.println("err: " + e.getMessage());
-        }
-
-        // Multi-catch: одно действие для разных исключений.
         try {
-            if (args.length == 0) throw new java.io.IOException("no file");
-        } catch (java.io.IOException | IllegalArgumentException e) {
-            System.out.println("io or arg");
-        }
-
-        // Свои исключения: checked или unchecked (extends Exception / RuntimeException).
-        try {
-            harvest(0);
-        } catch (VeggyBreakException e) {
-            System.out.println("broken: " + e.getMessage()
-                    + " cause=" + e.getCause());
-        }
-
-        // --- Принципы проектирования ---
-        // DRY, KISS, YAGNI, SOLID, GRASP.
-        // Наследование = жёстко (is-a); композиция = гибко (has-a).
-        // Favor composition over inheritance.
-        // Закон Деметры: не общайся с незнакомцами (одна точка на строку).
-
-        // --- Чистый код ---
-        // Осмысленные имена; методы короткие, с 0–2 аргументами.
-        // Комментарии — только там, где код не может сказать сам.
-        // Не возвращать/не принимать null там, где можно этого избежать.
-        // Рефакторинг — регулярно, не ломая работающее.
-
-        // --- Неочевидное в Java: ловушки ---
-        // 1) isOdd: x % 2 == 1 неверно для отрицательных.
-        System.out.println(isOdd(-3)); // false — а по идее true
-
-        // 2) Деньги/дроби: double неточен.
-        System.out.println(2.00 - 1.10 == 0.90); // false
-        // 3) BigDecimal в конструкторе — только из String.
-        System.out.println(new java.math.BigDecimal("2.00")
-                .subtract(new java.math.BigDecimal("1.10")));
-
-        // 4) Переполнение int до присваивания в long.
-        long ms = 24 * 60 * 60 * 1000;      // int-умножение, но влезло
-        long us = 24L * 60 * 60 * 1000 * 1000; // 24L — уже long
-        System.out.println(ms / us);
-
-        // 5) Octal-литерал: 01234 — не 1234.
-        System.out.println(01234 + 54321);
-
-        // 6) BigInteger неизменяем — нужен sum = sum.add(...).
-        var sum = java.math.BigInteger.ZERO;
-        for (var five = "5"; !five.equals("500000"); five += "0")
-            sum = sum.add(new java.math.BigInteger(five));
-        System.out.println(sum);
-
-        // 7) char + char = int (а не строка).
-        System.out.println('H' + 'a'); // 137
-
-        // 8) x *= 3 / 2 — целочисленное деление внутри.
-        var x = 1000;
-        x *= 3 / 2;                 // x *= 1
-        System.out.println(x);      // 1000
-
-        // 9) Приоритет: конкатенация vs != в тернарном.
-        String s = null;
-        String r = "s = " + (s != null ? s : "0"); // скобки обязательны
-        System.out.println(r);
-
-        // 10) Сдвиг и + : + имеет больший приоритет.
-        int lo = 0x01, hi = 0x01;
-        System.out.println((hi << 8) + lo); // 0x0101
-
-        // 11) Integer кэш [-128..127]: == работает только там.
-        Integer a = 42, b = 42, c = 451, d = 451;
-        System.out.println((a == b) + " " + (c == d));   // true false
-        System.out.println(c.equals(d));                 // true
-
-        // 11) Math.abs(Integer.MIN_VALUE) == Integer.MIN_VALUE.
-        System.out.println(Math.abs(Integer.MIN_VALUE));
-
-        // 12) Забытый throw — исключение создано, но не выброшено.
-        // new IllegalArgumentException("x"); // молча ничего не делает
-    }
-
-    static boolean isOdd(int x) { return x % 2 != 0; } // для отрицательных тоже
-
-    static void harvest(double strength) {
-        if (strength <= 0) {
-            throw new VeggyBreakException("Репка разломилась!",
-                    new IllegalStateException("strength=0"));
+            Integer.parseInt("двадцать");
+        } catch (NumberFormatException exception) {
+            System.out.println("Строка не содержит целое число");
         }
     }
 
-    /** Своё checked-исключение с цепочкой причин. */
-    static class VeggyBreakException extends Exception {
-        VeggyBreakException(String msg, Throwable cause) { super(msg, cause); }
+    private static void part2() {
+        System.out.println("\n2. throws, throw и try-with-resources");
+
+        Vegetable turnip = new Vegetable("репа");
+        try (MyResource resource = new MyResource()) {
+            resource.use();
+            turnip.harvest(0);
+        } catch (VeggyBreakException | IOException exception) {
+            System.out.println(exception.getMessage());
+            System.out.println("Причина: " + exception.getCause());
+        }
     }
 
-    /** AutoCloseable — можно использовать в try-with-resources. */
-    static class MyResource implements AutoCloseable {
-        void use() {}
-        @Override public void close() { System.out.println("closed"); }
+    private static void part3() {
+        System.out.println("\n3. Простой и читаемый код");
+
+        double total = calculateOrderTotal(199.90, 3);
+        System.out.printf("Итоговая стоимость: %.2f%n", total);
+    }
+
+    private static void part4() {
+        System.out.println("\n4. Числа и переполнение");
+
+        System.out.println("-3 нечётное: " + isOdd(-3));
+        System.out.println("double: " + (2.00 - 1.10 == 0.90));
+
+        BigDecimal price = new BigDecimal("2.00");
+        BigDecimal discount = new BigDecimal("1.10");
+        System.out.println("BigDecimal: " + price.subtract(discount));
+
+        long wrong = 50_000 * 50_000;
+        long correct = 50_000L * 50_000;
+        System.out.println("Переполнение: " + wrong + "; корректно: " + correct);
+    }
+
+    private static void part5() {
+        System.out.println("\n5. Литералы и приоритет операторов");
+
+        System.out.println("Восьмеричный 01234: " + 01234);
+        System.out.println("'H' + 'a': " + ('H' + 'a'));
+
+        int value = 1_000;
+        value *= 3 / 2;
+        System.out.println("x *= 3 / 2: " + value);
+
+        String text = null;
+        String description = "text = " + (text != null ? text : "пусто");
+        System.out.println(description);
+
+        int lower = 0x01;
+        int higher = 0x01;
+        System.out.println("0x0101: " + ((higher << 8) + lower));
+    }
+
+    private static void part6() {
+        System.out.println("\n6. Неочевидные случаи Java");
+
+        BigInteger sum = BigInteger.ZERO;
+        for (String five = "5"; !five.equals("500000"); five += "0") {
+            sum = sum.add(new BigInteger(five));
+        }
+        System.out.println("BigInteger: " + sum);
+
+        Integer first = 451;
+        Integer second = 451;
+        System.out.println("Integer ==: " + (first == second));
+        System.out.println("Integer equals: " + first.equals(second));
+        System.out.println("abs(MIN_VALUE): " + Math.abs(Integer.MIN_VALUE));
+    }
+
+    private static double calculateOrderTotal(double unitPrice, int quantity) {
+        if (unitPrice < 0 || quantity < 0) {
+            throw new IllegalArgumentException("Цена и количество не могут быть отрицательными");
+        }
+
+        double subtotal = unitPrice * quantity;
+        return subtotal * (1 + VAT_RATE);
+    }
+
+    private static boolean isOdd(int value) {
+        return value % 2 != 0;
+    }
+
+    private static class MyResource implements AutoCloseable {
+
+        void use() throws IOException {
+            System.out.println("Ресурс используется");
+        }
+
+        @Override
+        public void close() {
+            System.out.println("Ресурс закрыт");
+        }
     }
 }

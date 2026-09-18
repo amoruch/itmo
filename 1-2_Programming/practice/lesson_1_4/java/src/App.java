@@ -1,123 +1,76 @@
+
+import java.math.BigDecimal;
+
 /**
  * Урок 1.4 — наследование.
  */
 public class App {
 
     public static void main(String[] args) {
-        // Наследование: Square IS-A Rectangle. extends + super(...)
-        Rectangle rect = new Rectangle(3, 4);
-        Square sq = new Square(5);
-        System.out.println(rect.descr() + " S=" + rect.area());
-        System.out.println(sq.descr() + " S=" + sq.area()); // descr/area унаследованы
+        part1();
+        part2();
+        part3();
+        part4();
+    }
 
-        // Переопределение (overriding) — то же имя и параметры.
-        Shape shape = new Circle(2);
-        System.out.println(shape.area()); // вызывается Circle.area()
+    private static void part1() {
+        System.out.println("1. Наследование и полиморфизм");
 
-        // Статический метод не переопределяется, а скрывается (hiding).
-        Base b = new Base();
-        Base bExt = new Ext();
-        System.out.println(b.statVal());    // 3 — по типу ссылки
-        System.out.println(bExt.statVal()); // 3 — статика не полиморфна
+        Shape[] shapes = {
+            new Rectangle(4, 3),
+            new Square(5),
+            new Circle(2)
+        };
 
-        // Полиморфизм: метод экземпляра определяется реальным типом объекта.
-        System.out.println(b.getVal());    // 1
-        System.out.println(bExt.getVal()); // 2 — Ext переопределил
-
-        // Аннотация @Override ловит опечатки в имени/параметрах.
-        // Нельзя сужать доступ при переопределении: protected -> private запрещено.
-
-        // Ссылка на предка может указывать на объект-потомок (upcasting).
-        Shape s = new Circle(1.5);
-        System.out.println(s instanceof Shape);   // true
-        System.out.println(s instanceof Circle);  // true
-        System.out.println(s instanceof String);  // false
-
-        // Downcasting — только если реальный тип совпадает, иначе ClassCastException.
-        if (s instanceof Circle c) {              // pattern matching (Java 16+)
-            System.out.println("radius = " + c.getRadius());
+        for (Shape shape : shapes) {
+            System.out.printf("%s: площадь = %.2f, периметр = %.2f%n",
+                    shape.description(), shape.area(), shape.perimeter());
         }
-
-        // Object — корень иерархии. Даже пустой класс уже умеет:
-        Object obj = new Object();
-        System.out.println(obj.equals(null)); // false
-        System.out.println(obj.toString());   // java.lang.Object@...
-        System.out.println(obj.getClass());   // class java.lang.Object
-
-        // equals/hashCode/toString переопределяются в своём классе.
-        Rectangle r1 = new Rectangle(2, 3);
-        Rectangle r2 = new Rectangle(2, 3);
-        System.out.println(r1.equals(r2)); // true (значения полей)
-        System.out.println(r1);            // Rectangle 2.0x3.0
-
-        // final: запрет изменения/переопределения/наследования.
-        // sealed: контролируемое наследование (Java 17+).
-        // enum и record — специальные виды классов.
-
-        // Enum: список констант + поля и методы.
-        System.out.println(Season.SUMMER.days() + " " + Season.SUMMER);
-
-        // Record: неизменяемый класс-данные. Авто-геттеры, equals, hashCode, toString.
-        Point p1 = new Point(2, 3);
-        Point p2 = new Point(2, 3);
-        System.out.println(p1.equals(p2) + " " + p1); // true Point[x=2, y=3]
-
-        // Обёртки и автоупаковка.
-        Integer a = 42;         // Integer.valueOf(42) — из кэша [-128..127]
-        Integer b2 = 42;
-        Integer c = 451, d = 451; // вне кэша — разные объекты
-        System.out.println(a == b2);          // true
-        System.out.println(c == d);           // false
-        System.out.println(c.equals(d));      // true
     }
 
-    /** Предок: общие поля и методы. */
-    static class Shape {
-        public double area() { return 0; }
-        public String descr() { return "Shape"; }
-        public int getVal() { return 1; }
-        public static int statVal() { return 3; }
-    }
+    private static void part2() {
+        System.out.println("\n2. super, @Override и приведение типов");
 
-    /** Потомок Square: добавляет/переиспользует. */
-    static class Rectangle extends Shape {
-        private double width, height;
-        Rectangle(double w, double h) { width = w; height = h; }
-        @Override public double area()  { return width * height; }
-        @Override public String descr() { return "Rectangle " + width + "x" + height; }
-        @Override public String toString() { return descr(); }
-        @Override public boolean equals(Object o) {
-            if (!(o instanceof Rectangle r)) return false;
-            return width == r.width && height == r.height;
+        Square square = new Square(4);
+        System.out.println(square);
+
+        Shape shape = new ColoredSquare(3, "синий"); // upcasting
+        System.out.println(shape.description());
+
+        if (shape instanceof ColoredSquare coloredSquare) {
+            System.out.println("Цвет: " + coloredSquare.color()); // downcasting после проверки
         }
-        @Override public int hashCode() { return Double.hashCode(width * 31 + height); }
     }
 
-    static class Square extends Rectangle {
-        Square(double side) { super(side, side); } // вызов конструктора предка
+    private static void part3() {
+        System.out.println("\n3. Object, enum и record");
+
+        Rectangle first = new Rectangle(2, 6);
+        Rectangle second = new Rectangle(2, 6);
+        System.out.println(first);
+        System.out.println("equals: " + first.equals(second));
+        System.out.println("hashCode одинаковые: " + (first.hashCode() == second.hashCode()));
+
+        Season season = Season.SUMMER;
+        Point point = new Point(3, 7);
+        System.out.println(season + ": " + season.description());
+        System.out.println(point + ", x = " + point.x());
     }
 
-    static class Circle extends Shape {
-        private final double radius;
-        Circle(double r) { radius = r; }
-        @Override public double area() { return Math.PI * radius * radius; }
-        double getRadius() { return radius; }
-    }
+    private static void part4() {
+        System.out.println("\n4. Строки, обёртки и точные числа");
 
-    static class Base { public int getVal() { return 1; } public static int statVal() { return 3; } }
-    static class Ext extends Base {
-        @Override public int getVal() { return 2; }
-        public static int statVal() { return 4; } // hiding, не overriding
-    }
+        StringBuilder message = new StringBuilder("Java");
+        message.append(" изучает ").append(12).append(" студентов");
+        System.out.println(message);
 
-    /** Enum с полями и методами. */
-    enum Season {
-        WINTER(90), SPRING(92), SUMMER(92), AUTUMN(91);
-        private final int days;
-        Season(int d) { days = d; }
-        int days() { return days; }
-    }
+        Integer first = 128;
+        Integer second = 128;
+        System.out.println("Integer ==: " + (first == second));
+        System.out.println("Integer equals: " + first.equals(second));
 
-    /** Record — неизменяемые данные. */
-    record Point(int x, int y) {}
+        BigDecimal price = new BigDecimal("19.90");
+        BigDecimal count = new BigDecimal("3");
+        System.out.println("Стоимость: " + price.multiply(count));
+    }
 }

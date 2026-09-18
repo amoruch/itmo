@@ -1,67 +1,109 @@
+
 import java.util.Arrays;
 
 /**
- * Урок 1.1 — введение.
+ * Лекция 1: Java-платформа, типы данных и выражения.
  */
 public class App {
 
+    // these consts are work time
+    private static final int HOURS_PER_DAY = 8;
+    private static final int DAYS_PER_WEEK = 5;
+    private static final int WEEKS_PER_MONTH = 4;
+
     public static void main(String[] args) {
-        // JDK = JRE + tools; JRE = JVM + API.
-        // .java -javac-> .class (байт-код) -JVM-> выполнение. Кросс-платформенно.
-        System.out.println("Привет, мир!");
+        printTitle("1. Java и точка входа");
+        part1();
 
-        // Примитивные типы
-        byte b = 127;
-        short s = 32_767;
-        int i = 2_147_483_647;
-        long l = 9_223_372_036_854_775_807L;
-        float f = 3.14f;
-        double d = 3.14159;
-        char c = 'A';
-        boolean bool = true;
+        printTitle("2. Переменные, литералы и типы");
+        part2();
 
-        // Ссылочные типы
-        String str = "Java";
-        int[] arr = {1, 2, 3};
-        System.out.println(Arrays.toString(arr));
+        printTitle("3. Преобразования и выражения");
+        part3();
 
-        // Литералы: 10, 017, 0xf4e0, 0b0101_1011, 2.998e25, '\t', "Java\u2122"
-        int dec = 1_999_000, oct = 017, hex = 0xf4e0, bin = 0b0101_1011;
+        printTitle("4. Math, строки и форматированный вывод");
+        part4();
+    }
 
-        // Преобразования: расширяющие неявно, сужающие явно
-        long fromInt = 42;
-        byte fromLong = (byte) 511; // -1
-        System.out.println("(byte) 511 = " + fromLong);
+    private static void part1() {
+        // javac превращает App.java в байт-код App.class, JVM исполняет байт-код.
+        System.out.println("Hello, Java!");
+        System.out.println("Версия JVM: " + System.getProperty("java.version"));
+        System.out.println("ОС: " + System.getProperty("os.name"));
+    }
 
-        // Константы
-        final int CONSTANT = 50;
+    private static void part2() {
+        // Примитивы хранят значение, String и массив — ссылочные типы.
+        byte completedLabs = 3;
+        short groupNumber = 3111;
+        int students = 28;
+        long population = 8_100_000_000L;
+        float temperature = 22.5F;
+        double averageScore = 87.35;
+        char groupLetter = 'P';
+        boolean isDeadlineNear = false;
 
-        // Операторы
-        int a = 10, bb = 3;
-        System.out.println(a + bb);
-        System.out.println(a / bb);       // целочисленное
-        System.out.println(a % bb);
+        String course = "Программирование";
+        int[] scores = {78, 91, 64, 88};
 
-        int x = 5;
-        int y = x++;                       // y=5, x=6
-        int z = ++x;                       // x=7, z=7
+        // Литералы можно записывать в разных системах счисления и разделять _.
+        int decimal = 1_999_000;
+        int binary = 0b0101_1011;
+        int hexadecimal = 0xF4E0;
 
-        // Переполнение и особые значения
-        System.out.println(Integer.MAX_VALUE + 1); // -2147483648
-        System.out.println(1.0 / 0.0);              // Infinity
-        System.out.println(0.0 / 0.0);              // NaN
+        System.out.printf("%s, группа %c-%d: %d студентов, %d лаб сдано%n",
+                course, groupLetter, groupNumber, students, completedLabs);
+        System.out.printf("Население: %d, t = %.1f, средний балл = %.2f, дедлайн: %b%n",
+                population, temperature, averageScore, isDeadlineNear);
+        System.out.println("Баллы: " + Arrays.toString(scores));
+        System.out.printf("Литералы: %d, %d, %d%n", decimal, binary, hexadecimal);
+    }
 
-        // Конкатенация строк
-        System.out.println("hello" + 5 + 10);        // hello510
-        System.out.println("hello" + (5 + 10));      // hello15
-        System.out.println(10 + 5 + "Hello" + 5);    // 15Hello5
+    private static void part3() {
+        int source = 511;
+        long widened = source;           // Расширение int -> long происходит неявно.
+        byte narrowed = (byte) source;   // Сужение требует явного приведения: получится -1.
 
-        // Math + формат
-        System.out.println(Math.sqrt(16));
-        System.out.printf("x = %4d, y = %02.1f%n", 42, 3.14159);
+        int wholeDivision = 15 / 4;
+        double decimalDivision = 15 / 4.0;
+        int remainder = 15 % 4;
 
-        // Именование: camelCase для переменных, SNAKE_CASE для констант
-        final int HOURS_PER_DAY = 8, DAYS_PER_WEEK = 5;
-        System.out.println("hours/week = " + HOURS_PER_DAY * DAYS_PER_WEEK);
+        int counter = 5;
+        int postIncrement = counter++;   // Сначала используем 5, потом counter станет 6.
+        int preIncrement = ++counter;    // Сначала counter станет 7, затем используем 7.
+
+        int overflow = Integer.MAX_VALUE + 1;
+        double infinity = 1.0 / 0.0;
+        double notANumber = 0.0 / 0.0;
+
+        System.out.printf("long = %d, (byte) %d = %d%n", widened, source, narrowed);
+        System.out.printf("15 / 4 = %d; 15 / 4.0 = %.2f; остаток = %d%n",
+                wholeDivision, decimalDivision, remainder);
+        System.out.printf("post = %d, pre = %d, counter = %d%n",
+                postIncrement, preIncrement, counter);
+        System.out.printf("Переполнение int: %d; Infinity: %s; NaN: %s%n",
+                overflow, infinity, notANumber);
+    }
+
+    private static void part4() {
+        int workHoursPerMonth = HOURS_PER_DAY * DAYS_PER_WEEK * WEEKS_PER_MONTH;
+        double radius = 2.5;
+        double circleArea = Math.PI * Math.pow(radius, 2);
+        int rounded = (int) Math.round(circleArea);
+
+        // Скобки управляют приоритетом + при конкатенации со строками.
+        String withoutBrackets = "Сумма: " + 5 + 10;
+        String withBrackets = "Сумма: " + (5 + 10);
+
+        System.out.printf("Рабочих часов за месяц: %d%n", workHoursPerMonth);
+        System.out.printf("Круг радиуса %.1f: площадь = %.3f, округлённо = %d%n",
+                radius, circleArea, rounded);
+        System.out.println(withoutBrackets);
+        System.out.println(withBrackets);
+    }
+
+    private static void printTitle(String title) {
+        System.out.println();
+        System.out.println("=== " + title + " ===");
     }
 }
