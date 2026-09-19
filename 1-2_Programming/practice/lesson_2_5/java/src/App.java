@@ -1,135 +1,442 @@
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.CharArrayReader;
-import java.io.CharArrayWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PipedReader;
-import java.io.PipedWriter;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 
-/**
- * Урок 2.5 — ввод-вывод: базовые потоки.
- */
+import java.util.Arrays;
+import java.util.concurrent.*;
+import java.util.concurrent.locks.*;
+import java.util.concurrent.atomic.*;
+
 public class App {
 
     public static void main(String[] args) throws Exception {
-        // java.io   — потоки байтов/символов (классика, InputStream/Reader).
-        // java.nio  — каналы и буферы (Channel/Buffer, позже — Path/Files).
-        // Модель: источник → поток ввода → программа → поток вывода → приёмник.
-
-        byteStreams();
-        charStreams();
-        fileStreams();
-        memoryStreams();
-        pipedStreams();
+        part1();
     }
 
-    /** Байтовые потоки: 8 бит за единицу. */
-    static void byteStreams() throws IOException {
-        // InputStream  — abstract int read() → байт (0..255) или -1 (EOF).
-        // OutputStream — abstract void write(int b).
-        // Общие методы: read(byte[], off, len), write(byte[], off, len),
-        //               available(), skip(n), close(), flush().
-        // Байты ничего не знают о тексте — кодировку задаём отдельно.
+    static void part1() throws InterruptedException {
+        System.out.println("part1: multithreading");
 
-        byte[] data = { 72, 101, 108, 108, 111 };           // "Hello" в ASCII
-        try (InputStream in = new ByteArrayInputStream(data);
-             OutputStream out = new ByteArrayOutputStream()) {
-            int b;
-            while ((b = in.read()) != -1) out.write(b);
-            System.out.println(out);
+        // runnable
+        class TaskR implements Runnable {
+
+            @Override
+            public void run() {
+                /* thread body (logic) */
+            }
+        }
+        new Thread(new TaskR()).start();
+
+        // thread
+        class TaskT extends Thread {
+
+            @Override
+            public void run() {
+                /* logic */
+            }
+        }
+        new TaskT().start();
+
+        // lambda
+        new Thread(() -> {/* logic */
+        }).start();
+
+        // thread states
+        // new -> (ready -> runnable?(run())) -> terminated
+        System.out.println(Thread.currentThread().getName());
+        Thread tmp = new Thread(() -> {
+        });
+        // tmp.getID(); // deprecated? myoldversion?
+        tmp.setName("aboba");
+        tmp.getPriority();
+        tmp.setPriority(1);
+        tmp.getState();
+        tmp.isAlive();
+        tmp.isDaemon();
+        tmp.setDaemon(true);
+
+        Thread.sleep(10);
+
+        tmp.join();
+
+        // yield(); // ?
+        // sleeping between 'ready' and 'run()'
+        tmp.interrupt();
+
+        tmp.start();
+
+        Runnable r = () -> {
+            String name = Thread.currentThread().getName();
+            System.out.println(name + "started");
+            try {
+                Thread.sleep(500 + (long) (100 * Math.random()));
+            } catch (InterruptedException e) {
+                return;
+            }
+            System.out.println(name + " finished");
+        };
+
+        for (int i = 0; i < 10; i++) {
+            (new Thread(r)).start();
         }
 
-        // Кодировки: ASCII (7 бит), 8-битные (CP1251, KOI8-R), Unicode.
-        // UTF-8 для 'Ё' = 3 байта, UTF-16 — 2 байта + BOM (FE FF или FF FE).
-        // Java char = UTF-16 code unit, поэтому нужен переход байт ↔ символ.
+        class Shared {
+
+            int counter = 0;
+
+            void up() {
+                counter++;
+            }
+
+            void down() {
+                counter--;
+            }
+        }
+
+        Shared sh = new Shared();
+        new Thread(sh::up).start();
+        new Thread(sh::down).start();
+        System.out.println(sh.counter);
+
+        // race condition
+        // solution(s, because there are many)
+        class SharedS {
+
+            int counter = 0;
+
+            synchronized void up() {
+                counter++;
+            }
+
+            synchronized void down() {
+                counter--;
+            }
+        }
+
+        SharedS shs = new SharedS();
+        new Thread(shs::up).start();
+        new Thread(shs::down).start();
+        System.out.println(shs.counter);
+
+        // syncronized works via monitor (shit for obj to 'monitor' who uses methods?)
+        // blocked between 'ready' and 'run()'
+        // synchronized method - only one thread can access
+        // sync class - only one thread can work with at a time
+        // sync static method - other static are blocked too?
+        // cache problem - diff threads see diff values
+        // JVM optimization mechanic
+        class Opt extends Thread {
+
+            boolean done = false;
+            long i = 0;
+
+            @Override
+            public void run() {
+                while (!done) {
+                    i++; // if (!done) while (true) i++;
+
+                }
+            }
+        }
+
+        var opt = new Opt();
+        opt.start();
+        Thread.sleep(1000);
+        opt.done = true;
+
+        // JVM can change order of ops (optimization )
+        // volatile - shows, that this var can be changed from another thread
+        // so JVM would be careful optimizing this shit
+        // and volatile dont use cache
+        // so its longer, but reliable
+        // happens-before mechanic (JMM - Java Memory Model)
+        // 1. common variable and flag
+        class Block {
+
+            volatile boolean ready;
+            int value;
+
+            void put(int i) {
+                while (ready);
+                synchronized (this) {
+                    value = i;
+                    ready = true;
+                }
+            }
+
+            int get() {
+                while (!ready);
+                synchronized (this) {
+                    ready = false;
+                    return value;
+                }
+            }
+        }
+
+        Block g = new Block();
+
+        Thread t1 = new Thread(() -> {
+            g.put(100);
+        });
+        Thread t2 = new Thread(() -> {
+            g.get();
+        });
+
+        t1.start();
+        t2.start();
+
+        // 2. wait / notify
+        class Block2 {
+
+            volatile boolean ready;
+            int value;
+
+            synchronized void put(int i) {
+                while (ready) try {
+                    wait();
+                } catch (InterruptedException e) {
+                };
+                value = i;
+                ready = true;
+                notifyAll();
+            }
+
+            synchronized int get() {
+                while (!ready) try {
+                    wait();
+                } catch (InterruptedException e) {
+                };
+                ready = false;
+                notifyAll();
+                return value;
+            }
+        }
+
+        Block2 g2 = new Block2();
+
+        Thread t12 = new Thread(() -> {
+            g2.put(100);
+        });
+        Thread t22 = new Thread(() -> {
+            g2.get();
+        });
+
+        t12.start();
+        t22.start();
+
+        // timed_waiting/sleeping between 'ready' and 'run()' 
     }
 
-    /** Символьные потоки: единица — char (16 бит). */
-    static void charStreams() throws IOException {
-        // Reader — abstract int read(char[], off, len) / int read()
-        // Writer — abstract void write(char[], off, len) / void write(int c)
-        // Плюс Writer.append(int c), append(CharSequence).
-        try (Reader in = new StringReader("Hello");
-             Writer out = new StringWriter()) {
-            int c;
-            while ((c = in.read()) != -1) out.write(c);
-            System.out.println(out);
+    static void part2() throws InterruptedException, ExecutionException {
+        System.out.println("part2: java.concurrent");
+
+        // deadlock problem
+        // livelock
+        // starvation
+        // non determinent
+
+        /*
+        java.util.concurrent
+        interfaces: Executor, Callable, Future;
+        classes: ThreadPoolExecutor, ForkJoinPool;
+        sync-classes;
+        interfaces: BlockingQueue, TransferQueue;
+        collections: Concurrent, CopyOnWrite;
+        
+        java.util.concurrent.locks
+        interfaces: Lock, Condition
+
+        java.util.concurrent.atomic
+        AtomicInteger, AtomicLong, AtomicReference
+         */
+        // Executor - abstract executioner
+        // void execute (Runnable task)
+        class myExecutor implements Executor {
+
+            public myExecutor() {
+            }
+
+            @Override
+            public void execute(Runnable task) {
+                (new Thread(task)).start();
+            }
         }
 
-        // Мосты: InputStreamReader(InputStream, Charset) — байты → символы,
-        //        OutputStreamWriter(OutputStream, Charset) — символы → байты.
+        Runnable task1 = () -> {
+        };
+        Executor executor = new myExecutor();
+        executor.execute(task1);
+
+        /*
+        interface ExecutorService extends Executor
+            Future<T> submit(Callable<T> task)
+            void shutdown()
+            List<Runnable> shutdownNow()
+            List<Future<T>> invokeAll(Collection<Callable<T>> tasks)
+
+        interface Callable<T>
+            T call()
+        
+        interface Future<T>
+            T get()
+            boolean isDone()
+            boolean cancel()
+         */
+        var s = "toFind";
+        var text = "very long text";
+
+        ExecutorService service = Executors.newFixedThreadPool(4);
+        Callable<Boolean> task = () -> search(s, text);
+        Future<Boolean> future = service.submit(task);
+
+        while (!future.isDone()) {
+            Thread.sleep(100);
+        }
+
+        boolean res = future.get();
+        System.out.println(res);
+
+        // scheduledExecutorService
+        // pools - reuse of threads
+        // ThreadPoolExecutor - implements ExecutorService
+        // corePoolSize, maximumPoolSize, keepAliveTime
+        // Executors - static methods for creating ExecutorServices
+        String[] arr = {"CO2", "H2O", "NaCl"};
+
+        var pool = Executors.newFixedThreadPool(2);
+        for (String elem : arr) {
+            var future2 = pool.submit(() -> search(elem, text));
+            System.out.println(future2.get());
+        }
+
+        // ForkJoin framework (parralel, divide and conquer, work stealing)
+        // ForkJoinPool, ForkJoinTaskm RecursiveAction, RecursiveTask
+        class Task extends RecursiveAction {
+
+            final int[] array;
+            final int lo, hi;
+            final static int SIZE = 10;
+
+            Task(int[] array, int lo, int hi) {
+                this.array = array;
+                this.lo = lo;
+                this.hi = hi;
+            }
+
+            @Override
+            protected void compute() {
+                if ((hi - lo) < SIZE) {
+                    for (int i = lo; i < hi; i++) {
+                        array[i] *= 2;
+                    }
+                } else {
+                    int mid = (lo + hi) / 2;
+                    var task1 = new Task(array, lo, mid);
+                    var task2 = new Task(array, mid, hi);
+                    task1.fork();
+                    task2.fork();
+                    task2.join();
+                    task1.join();
+                }
+            }
+        }
+
+        int[] array = new int[33554432];
+        Arrays.parallelSetAll(array, i -> 1);
+        var bigtask = new Task(array, 0, array.length);
+        var FJPool = ForkJoinPool.commonPool();
+        FJPool.invoke(bigtask);
+
+        /* CompletableFuture
+
+        CompletableFuture
+            .supplyAsync( () -> getResult() )
+            .thenApply( String::toUpperCase )
+            .thenAccept( System.out::println );
+         */
+        // Parallel Streams
+        // Spliterators (Stream API)
+        // interface Lock - synchonized analog
+        // interface Condition - wait-notify analog
+        // ReentrantLock, ReadriteLock, ReentrantReadriteLock
+        Lock lock = new ReentrantLock();
+        Condition notFull = lock.newCondition();
+        Condition notEmpty = lock.newCondition();
+        int[] values = new int[100];
+        int count = 0;
+
+        // semaphore
+        // countDownLatch
+        // CyclicBarrier
+        // Phaser
+        // Exchanger<V>
+        // BlockingQueue, BlockingDeque
+        // ArrayBlockingQueue
+        // LinkedBlockingQueue
+        // LinkedBlockingDeque
+        // PriorityBlockingQueue
+        // DelayQueue<E extends Delayed>
+        // SynchronousQueue
+        // interface TransferrQueue extends BlockingQueue
+        // LinkedTransferQueue implements TransferQueue
+        // ConcurrentMap, ConcurrentNavigableMap
+        // ConcurrentLinkedQueue
+        // CopyOnWriteArrayList / CopyOnWriteArraySet
+        // atomic operations (CAS, compare and swap)
+        class fakeCAS {
+
+            int value;
+            atomic
+
+            int cmpxchg(int expected, int updated) {
+                int old = value;
+                if (old == expected) {
+                    value = updated;
+                }
+                return old;
+            }
+            atomic
+
+            int get() {
+                return value;
+            }
+        }
+
+        var fcas = new fakeCAS();
+        /*
+        int increment() {
+            int v;
+            do {
+                v = fcas.get();
+            } while (v != fcas.cmpxchg(v, v + 1));
+            return v + 1;
+        }
+         */
+
+        // java.util.concurrent.atomic
+        // AtomicInteger, AtomicLong
+        // AtomicBoolean, AtomicReference
+        // AtomicIntegerArray
+        // LongAccumulator, DoubleAccumulator
+        // LongAdder, DoubleAdder
+        class Count {
+
+            AtomicInteger counter = new AtomicInteger(0);
+
+            public void up() {
+                counter.incrementAndGet();
+            }
+
+            public void down() {
+                counter.decrementAndGet();
+            }
+        }
+
+        List<String> keys; // список строк для подсчета
+        ConcurrentHashMap<String, LongAdder> counter; // счетчик
+        counter = new ConcurrentHashMap<>();
+        for (String key : keys) {
+            counter.computeIfAbsent(key, LongAdder::new).increment();
+        }
     }
 
-    /** Файловые потоки + try-with-resources. */
-    static void fileStreams() throws IOException {
-        var path = File.createTempFile("demo", ".bin");
-        path.deleteOnExit();
-
-        // try-with-resources закрывает всё, что implements AutoCloseable.
-        try (FileOutputStream out = new FileOutputStream(path);
-             FileInputStream  in  = new FileInputStream(path)) {
-            for (int b : new byte[]{ 'H', 'i', '!' }) out.write(b);
-            out.flush();
-            int b;
-            while ((b = in.read()) != -1) System.out.print((char) b);
-            System.out.println();
-        }
-
-        var tpath = File.createTempFile("demo", ".txt");
-        tpath.deleteOnExit();
-        try (FileWriter out = new FileWriter(tpath);
-             FileReader in  = new FileReader(tpath)) {
-            out.write("Hello, Java!");
-            out.flush();
-            int c;
-            while ((c = in.read()) != -1) System.out.print((char) c);
-            System.out.println();
-        }
-
-        // Closeable  — close() throws IOException (освобождение ресурса).
-        // Flushable  — flush() сливает буфер в приёмник.
-        // AutoCloseable — Closable extends AutoCloseable, for try-with-resources.
-    }
-
-    /** Специализированные потоки в памяти: массив / строка. */
-    static void memoryStreams() throws IOException {
-        var bout = new ByteArrayOutputStream();
-        bout.write("bytes".getBytes(StandardCharsets.UTF_8));
-        byte[] bytes = bout.toByteArray();
-
-        var cin = new CharArrayReader("abc".toCharArray());
-        var cout = new CharArrayWriter();
-        int c; while ((c = cin.read()) != -1) cout.write(c);
-        char[] chars = cout.toCharArray();
-
-        var sw = new StringWriter();
-        sw.write("built from chars");
-        String s = sw.toString();
-
-        System.out.println(new String(bytes, StandardCharsets.UTF_8)
-                + " / " + new String(chars) + " / " + s);
-    }
-
-    /** Каналы (pipe) — соединение потоков внутри процесса. */
-    static void pipedStreams() throws IOException {
-        try (var out = new PipedWriter();
-             var in  = new PipedReader(out)) {
-            out.write("ping");
-            int c; while ((c = in.read()) != -1) System.out.print((char) c);
-            System.out.println();
-        }
-        // Для байтов: PipedOutputStream + PipedInputStream (нужен connect).
+    static public boolean search(String s, String text) {
+        return text.contains(s);
     }
 }
