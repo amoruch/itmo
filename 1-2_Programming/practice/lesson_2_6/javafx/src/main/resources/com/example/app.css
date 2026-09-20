@@ -1,0 +1,9 @@
+.root {
+    -fx-padding: 12px;
+    -fx-background-color: linear-gradient(to bottom right, #ffb6c1, #b6e3ff);
+}
+
+.greeting {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+}

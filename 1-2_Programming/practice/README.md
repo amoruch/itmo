@@ -18,8 +18,11 @@
 | [lesson_2_3/java](lesson_2_3/java)   | NIO, сеть, дата-время и лямбды                                        |
 | [lesson_2_4/java](lesson_2_4/java)   | Functional interfaces, Stream API, JDBC и безопасность                |
 | [`lesson_2_5/java`](lesson_2_5/java) | Многопоточность: потоки, синхронизация, пулы и `java.util.concurrent` |
+| [`lesson_2_6/javafx`](lesson_2_6/javafx) | GUI: Swing, Java 2D, JavaFX и локализация                           |
+| [`lesson_2_7/java`](lesson_2_7/java) | Шаблоны проектирования и безопасный код — в процессе                  |
+| [`lesson_2_8/java`](lesson_2_8/java) | Reflection, Method Handle, VarHandle, аннотации и инструменты         |
 
-Остальные уроки сохранены в исходном виде и будут перерабатываться последовательно, по одной лекции за раз.
+В `lesson_2_7` реализована только часть паттернов; к остальным вернёмся отдельно.
 
 ## Запуск Java-примера
 
@@ -28,6 +31,13 @@
 ```powershell
 javac -encoding UTF-8 -d bin src/*.java
 java -cp bin App
+```
+
+Для JavaFX-примера (`lesson_2_6`) нужен Maven:
+
+```powershell
+cd lesson_2_6\javafx
+mvn javafx:run
 ```
 
 Для примера с JPMS-модулем (`lesson_1_7`):

@@ -1,4 +1,4 @@
-
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.*;
@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 
 /**
- * Практика 5 — многопоточность.
+ * Урок 2.5 — многопоточность.
  */
 public class App {
 
@@ -17,38 +17,49 @@ public class App {
         synchronizersAndAtomics();
     }
 
-    // --- 1. Потоки и Runnable ------------------------------------------------
+    // --- 1. Потоки, Runnable и virtual threads ------------------------------
     static void threadsAndRunnable() throws InterruptedException {
         // Runnable — задача, Thread — исполнитель.
-        new Thread(() -> System.out.println("task on " + Thread.currentThread().getName())).start();
+        Thread task = new Thread(() -> System.out.println("task on " + Thread.currentThread().getName()));
+        task.start();
+        task.join();
 
-        // Свой поток с настройками.
         Thread worker = new Thread(() -> {
-        });
-        worker.setName("worker");
+        }, "worker");
         worker.setDaemon(true);
         worker.start();
         worker.join();
 
-        // Прерывание спящего потока.
+        // Virtual thread — лёгкий поток JVM, удобный для множества I/O-задач.
+        Thread virtual = Thread.ofVirtual()
+                .name("virtual-worker")
+                .start(() -> System.out.println("virtual: " + Thread.currentThread().isVirtual()));
+        virtual.join();
+
         Thread sleeper = new Thread(() -> {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(1_000);
                 System.out.println("not reached");
             } catch (InterruptedException e) {
                 System.out.println("interrupted");
+                Thread.currentThread().interrupt();
             }
         });
         sleeper.start();
         sleeper.interrupt();
         sleeper.join();
 
-        // Порядок между потоками недетерминирован.
+        // Порядок между потоками недетерминирован, но join() ждёт каждый из них.
         Runnable printer = () -> System.out.print(Thread.currentThread().getName() + " ");
+        List<Thread> printers = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            new Thread(printer).start();
+            Thread printerThread = new Thread(printer);
+            printers.add(printerThread);
+            printerThread.start();
         }
-        Thread.sleep(100);
+        for (Thread printerThread : printers) {
+            printerThread.join();
+        }
         System.out.println();
     }
 
@@ -57,32 +68,36 @@ public class App {
         // counter++ — не атомарная операция: load → add → store.
         class Shared {
 
-            int counter = 0;
+            private int counter;
 
             synchronized void up() {
                 counter++;
             }
-
-            synchronized void down() {
-                counter--;
-            }
         }
-        Shared sh = new Shared();
-        Thread a = new Thread(sh::up);
-        Thread b = new Thread(sh::down);
-        a.start();
-        b.start();
-        a.join();
-        b.join();
-        System.out.println("counter = " + sh.counter);
+        Shared shared = new Shared();
+        List<Thread> incrementers = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            Thread incrementer = new Thread(() -> {
+                for (int j = 0; j < 10_000; j++) {
+                    shared.up();
+                }
+            });
+            incrementers.add(incrementer);
+            incrementer.start();
+        }
+        for (Thread incrementer : incrementers) {
+            incrementer.join();
+        }
+        System.out.println("counter = " + shared.counter);
 
-        // volatile — видимость без кэша, но не атомарность.
+        // volatile — видимость между потоками, но не атомарность составных операций.
         class Loop extends Thread {
 
-            volatile boolean done = false;
+            volatile boolean done;
 
             public void run() {
                 while (!done) {
+                    Thread.onSpinWait();
                 }
             }
         }
@@ -99,11 +114,11 @@ public class App {
             private int value;
             private boolean ready;
 
-            synchronized void put(int v) throws InterruptedException {
+            synchronized void put(int nextValue) throws InterruptedException {
                 while (ready) {
                     wait();
                 }
-                value = v;
+                value = nextValue;
                 ready = true;
                 notifyAll();
             }
@@ -121,13 +136,15 @@ public class App {
         Thread producer = new Thread(() -> {
             try {
                 box.put(100);
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         });
         Thread consumer = new Thread(() -> {
             try {
                 System.out.println("got " + box.get());
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         });
         producer.start();
@@ -139,56 +156,64 @@ public class App {
     // --- 3. Executor, пулы, ForkJoin, CompletableFuture ----------------------
     static void executorsAndPools() throws Exception {
         // Executor — абстракция исполнителя.
-        Executor executor = task -> new Thread(task).start();
-        executor.execute(() -> System.out.println("via Executor"));
+        ExecutorService service = Executors.newSingleThreadExecutor();
+        try {
+            Executor executor = service;
+            executor.execute(() -> System.out.println("via Executor"));
+            Callable<Boolean> task = () -> "very long text".contains("long");
+            System.out.println("future.get = " + service.submit(task).get());
+        } finally {
+            service.shutdown();
+            service.awaitTermination(1, TimeUnit.SECONDS);
+        }
 
-        // ExecutorService + Callable + Future.
-        ExecutorService service = Executors.newFixedThreadPool(2);
-        Callable<Boolean> task = () -> "very long text".contains("long");
-        Future<Boolean> future = service.submit(task);
-        System.out.println("future.get = " + future.get());
-        service.shutdown();
-
-        // Пул потоков + батч задач.
+        // Сначала отправляем все задачи, затем ждём результаты.
         String[] words = {"CO2", "H2O", "NaCl"};
         ExecutorService pool = Executors.newFixedThreadPool(2);
-        for (String w : words) {
-            Future<Boolean> f = pool.submit(() -> w.contains("O"));
-            System.out.println(w + " -> " + f.get());
+        try {
+            List<Future<Boolean>> futures = new ArrayList<>();
+            for (String word : words) {
+                futures.add(pool.submit(() -> word.contains("O")));
+            }
+            for (int i = 0; i < words.length; i++) {
+                System.out.println(words[i] + " -> " + futures.get(i).get());
+            }
+        } finally {
+            pool.shutdown();
+            pool.awaitTermination(1, TimeUnit.SECONDS);
         }
-        pool.shutdown();
 
         // ForkJoin: divide and conquer, work stealing.
         class DoubleTask extends RecursiveAction {
 
-            static final int THRESHOLD = 1_000_000;
+            static final int THRESHOLD = 10_000;
             final int[] array;
-            final int lo, hi;
+            final int lo;
+            final int hi;
 
-            DoubleTask(int[] a, int lo, int hi) {
-                array = a;
+            DoubleTask(int[] array, int lo, int hi) {
+                this.array = array;
                 this.lo = lo;
                 this.hi = hi;
             }
 
             protected void compute() {
-                if (hi - lo < THRESHOLD) {
+                if (hi - lo <= THRESHOLD) {
                     for (int i = lo; i < hi; i++) {
                         array[i] *= 2;
                     }
-                } else {
-                    int mid = (lo + hi) / 2;
-                    invokeAll(new DoubleTask(array, lo, mid),
-                            new DoubleTask(array, mid, hi));
+                    return;
                 }
+
+                int mid = (lo + hi) / 2;
+                invokeAll(new DoubleTask(array, lo, mid), new DoubleTask(array, mid, hi));
             }
         }
-        int[] array = new int[4_000_000];
+        int[] array = new int[100_000];
         Arrays.fill(array, 1);
         ForkJoinPool.commonPool().invoke(new DoubleTask(array, 0, array.length));
         System.out.println("array[0] = " + array[0]);
 
-        // CompletableFuture — композиция асинхронных шагов.
         CompletableFuture
                 .supplyAsync(() -> "result")
                 .thenApply(String::toUpperCase)
@@ -198,36 +223,52 @@ public class App {
 
     // --- 4. Синхронизаторы и атомарные коллекции ----------------------------
     static void synchronizersAndAtomics() throws Exception {
-        // Lock / Condition — гибче synchronized.
+        // Lock / Condition — гибче synchronized и позволяют несколько очередей ожидания.
         Lock lock = new ReentrantLock();
-        Condition notEmpty = lock.newCondition();
+        Condition changed = lock.newCondition();
+        boolean[] ready = {false};
+        Thread signaler = new Thread(() -> {
+            lock.lock();
+            try {
+                ready[0] = true;
+                changed.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        });
         lock.lock();
         try {
-            // критическая секция
+            signaler.start();
+            while (!ready[0]) {
+                changed.await();
+            }
         } finally {
             lock.unlock();
         }
+        signaler.join();
+        System.out.println("condition signalled");
 
         // Semaphore — ограничение числа одновременных доступов.
         Semaphore semaphore = new Semaphore(2);
         semaphore.acquire();
         try {
-            // ... критическая работа ...
+            System.out.println("semaphore acquired");
         } finally {
             semaphore.release();
         }
 
-        // CountDownLatch — ждать N событий.
         CountDownLatch latch = new CountDownLatch(2);
-        Runnable worker = () -> {
+        Runnable latchWorker = () -> {
             try {
                 Thread.sleep(50);
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                latch.countDown();
             }
-            latch.countDown();
         };
-        new Thread(worker).start();
-        new Thread(worker).start();
+        new Thread(latchWorker).start();
+        new Thread(latchWorker).start();
         latch.await();
         System.out.println("latch opened");
 
@@ -236,13 +277,15 @@ public class App {
         Thread producer = new Thread(() -> {
             try {
                 queue.put(42);
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         });
         Thread consumer = new Thread(() -> {
             try {
                 System.out.println("took " + queue.take());
-            } catch (InterruptedException ignored) {
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         });
         producer.start();
@@ -250,21 +293,20 @@ public class App {
         producer.join();
         consumer.join();
 
-        // AtomicInteger — CAS-инкремент без блокировок.
         AtomicInteger counter = new AtomicInteger();
         counter.incrementAndGet();
         counter.addAndGet(10);
         System.out.println("atomic = " + counter.get());
 
-        // ConcurrentHashMap + LongAdder — частотный анализ.
         var freq = new ConcurrentHashMap<String, LongAdder>();
         for (String key : List.of("a", "b", "a", "c", "a")) {
-            freq.computeIfAbsent(key, k -> new LongAdder()).increment();
+            freq.computeIfAbsent(key, ignored -> new LongAdder()).increment();
         }
         System.out.println("freq = " + freq);
 
-        // CopyOnWriteArrayList — read-heavy сценарии.
-        var list = new CopyOnWriteArrayList<String>();
-        list.add("x");
+        // CopyOnWriteArrayList подходит для редких записей и частых чтений.
+        var listeners = new CopyOnWriteArrayList<String>();
+        listeners.add("listener");
+        listeners.forEach(System.out::println);
     }
 }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.FlowPane?>
+
+<FlowPane hgap="8.0" vgap="8.0" xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.AppController">
+    <children>
+        <Label fx:id="myLabel" styleClass="greeting" text="Hello World!" />
+        <Button mnemonicParsing="false" onAction="#showGreeting" text="OK" />
+    </children>
+</FlowPane>
