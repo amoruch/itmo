@@ -1,102 +1,61 @@
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.locks.*;
 import java.util.concurrent.atomic.*;
+import java.util.concurrent.locks.*;
 
+/**
+ * Практика 5 — многопоточность.
+ */
 public class App {
 
     public static void main(String[] args) throws Exception {
-        part1();
+        threadsAndRunnable();
+        synchronization();
+        executorsAndPools();
+        synchronizersAndAtomics();
     }
 
-    static void part1() throws InterruptedException {
-        System.out.println("part1: multithreading");
+    // --- 1. Потоки и Runnable ------------------------------------------------
+    static void threadsAndRunnable() throws InterruptedException {
+        // Runnable — задача, Thread — исполнитель.
+        new Thread(() -> System.out.println("task on " + Thread.currentThread().getName())).start();
 
-        // runnable
-        class TaskR implements Runnable {
-
-            @Override
-            public void run() {
-                /* thread body (logic) */
-            }
-        }
-        new Thread(new TaskR()).start();
-
-        // thread
-        class TaskT extends Thread {
-
-            @Override
-            public void run() {
-                /* logic */
-            }
-        }
-        new TaskT().start();
-
-        // lambda
-        new Thread(() -> {/* logic */
-        }).start();
-
-        // thread states
-        // new -> (ready -> runnable?(run())) -> terminated
-        System.out.println(Thread.currentThread().getName());
-        Thread tmp = new Thread(() -> {
+        // Свой поток с настройками.
+        Thread worker = new Thread(() -> {
         });
-        // tmp.getID(); // deprecated? myoldversion?
-        tmp.setName("aboba");
-        tmp.getPriority();
-        tmp.setPriority(1);
-        tmp.getState();
-        tmp.isAlive();
-        tmp.isDaemon();
-        tmp.setDaemon(true);
+        worker.setName("worker");
+        worker.setDaemon(true);
+        worker.start();
+        worker.join();
 
-        Thread.sleep(10);
-
-        tmp.join();
-
-        // yield(); // ?
-        // sleeping between 'ready' and 'run()'
-        tmp.interrupt();
-
-        tmp.start();
-
-        Runnable r = () -> {
-            String name = Thread.currentThread().getName();
-            System.out.println(name + "started");
+        // Прерывание спящего потока.
+        Thread sleeper = new Thread(() -> {
             try {
-                Thread.sleep(500 + (long) (100 * Math.random()));
+                Thread.sleep(1000);
+                System.out.println("not reached");
             } catch (InterruptedException e) {
-                return;
+                System.out.println("interrupted");
             }
-            System.out.println(name + " finished");
-        };
+        });
+        sleeper.start();
+        sleeper.interrupt();
+        sleeper.join();
 
-        for (int i = 0; i < 10; i++) {
-            (new Thread(r)).start();
+        // Порядок между потоками недетерминирован.
+        Runnable printer = () -> System.out.print(Thread.currentThread().getName() + " ");
+        for (int i = 0; i < 5; i++) {
+            new Thread(printer).start();
         }
+        Thread.sleep(100);
+        System.out.println();
+    }
 
+    // --- 2. Гонки, synchronized, volatile, wait/notify ----------------------
+    static void synchronization() throws InterruptedException {
+        // counter++ — не атомарная операция: load → add → store.
         class Shared {
-
-            int counter = 0;
-
-            void up() {
-                counter++;
-            }
-
-            void down() {
-                counter--;
-            }
-        }
-
-        Shared sh = new Shared();
-        new Thread(sh::up).start();
-        new Thread(sh::down).start();
-        System.out.println(sh.counter);
-
-        // race condition
-        // solution(s, because there are many)
-        class SharedS {
 
             int counter = 0;
 
@@ -108,335 +67,204 @@ public class App {
                 counter--;
             }
         }
+        Shared sh = new Shared();
+        Thread a = new Thread(sh::up);
+        Thread b = new Thread(sh::down);
+        a.start();
+        b.start();
+        a.join();
+        b.join();
+        System.out.println("counter = " + sh.counter);
 
-        SharedS shs = new SharedS();
-        new Thread(shs::up).start();
-        new Thread(shs::down).start();
-        System.out.println(shs.counter);
+        // volatile — видимость без кэша, но не атомарность.
+        class Loop extends Thread {
 
-        // syncronized works via monitor (shit for obj to 'monitor' who uses methods?)
-        // blocked between 'ready' and 'run()'
-        // synchronized method - only one thread can access
-        // sync class - only one thread can work with at a time
-        // sync static method - other static are blocked too?
-        // cache problem - diff threads see diff values
-        // JVM optimization mechanic
-        class Opt extends Thread {
+            volatile boolean done = false;
 
-            boolean done = false;
-            long i = 0;
-
-            @Override
             public void run() {
                 while (!done) {
-                    i++; // if (!done) while (true) i++;
-
                 }
             }
         }
+        Loop loop = new Loop();
+        loop.start();
+        Thread.sleep(50);
+        loop.done = true;
+        loop.join();
+        System.out.println("loop stopped");
 
-        var opt = new Opt();
-        opt.start();
-        Thread.sleep(1000);
-        opt.done = true;
+        // wait / notify — обмен через монитор объекта.
+        class Box {
 
-        // JVM can change order of ops (optimization )
-        // volatile - shows, that this var can be changed from another thread
-        // so JVM would be careful optimizing this shit
-        // and volatile dont use cache
-        // so its longer, but reliable
-        // happens-before mechanic (JMM - Java Memory Model)
-        // 1. common variable and flag
-        class Block {
+            private int value;
+            private boolean ready;
 
-            volatile boolean ready;
-            int value;
-
-            void put(int i) {
-                while (ready);
-                synchronized (this) {
-                    value = i;
-                    ready = true;
-                }
-            }
-
-            int get() {
-                while (!ready);
-                synchronized (this) {
-                    ready = false;
-                    return value;
-                }
-            }
-        }
-
-        Block g = new Block();
-
-        Thread t1 = new Thread(() -> {
-            g.put(100);
-        });
-        Thread t2 = new Thread(() -> {
-            g.get();
-        });
-
-        t1.start();
-        t2.start();
-
-        // 2. wait / notify
-        class Block2 {
-
-            volatile boolean ready;
-            int value;
-
-            synchronized void put(int i) {
-                while (ready) try {
+            synchronized void put(int v) throws InterruptedException {
+                while (ready) {
                     wait();
-                } catch (InterruptedException e) {
-                };
-                value = i;
+                }
+                value = v;
                 ready = true;
                 notifyAll();
             }
 
-            synchronized int get() {
-                while (!ready) try {
+            synchronized int get() throws InterruptedException {
+                while (!ready) {
                     wait();
-                } catch (InterruptedException e) {
-                };
+                }
                 ready = false;
                 notifyAll();
                 return value;
             }
         }
-
-        Block2 g2 = new Block2();
-
-        Thread t12 = new Thread(() -> {
-            g2.put(100);
+        Box box = new Box();
+        Thread producer = new Thread(() -> {
+            try {
+                box.put(100);
+            } catch (InterruptedException ignored) {
+            }
         });
-        Thread t22 = new Thread(() -> {
-            g2.get();
+        Thread consumer = new Thread(() -> {
+            try {
+                System.out.println("got " + box.get());
+            } catch (InterruptedException ignored) {
+            }
         });
-
-        t12.start();
-        t22.start();
-
-        // timed_waiting/sleeping between 'ready' and 'run()' 
+        producer.start();
+        consumer.start();
+        producer.join();
+        consumer.join();
     }
 
-    static void part2() throws InterruptedException, ExecutionException {
-        System.out.println("part2: java.concurrent");
+    // --- 3. Executor, пулы, ForkJoin, CompletableFuture ----------------------
+    static void executorsAndPools() throws Exception {
+        // Executor — абстракция исполнителя.
+        Executor executor = task -> new Thread(task).start();
+        executor.execute(() -> System.out.println("via Executor"));
 
-        // deadlock problem
-        // livelock
-        // starvation
-        // non determinent
-
-        /*
-        java.util.concurrent
-        interfaces: Executor, Callable, Future;
-        classes: ThreadPoolExecutor, ForkJoinPool;
-        sync-classes;
-        interfaces: BlockingQueue, TransferQueue;
-        collections: Concurrent, CopyOnWrite;
-        
-        java.util.concurrent.locks
-        interfaces: Lock, Condition
-
-        java.util.concurrent.atomic
-        AtomicInteger, AtomicLong, AtomicReference
-         */
-        // Executor - abstract executioner
-        // void execute (Runnable task)
-        class myExecutor implements Executor {
-
-            public myExecutor() {
-            }
-
-            @Override
-            public void execute(Runnable task) {
-                (new Thread(task)).start();
-            }
-        }
-
-        Runnable task1 = () -> {
-        };
-        Executor executor = new myExecutor();
-        executor.execute(task1);
-
-        /*
-        interface ExecutorService extends Executor
-            Future<T> submit(Callable<T> task)
-            void shutdown()
-            List<Runnable> shutdownNow()
-            List<Future<T>> invokeAll(Collection<Callable<T>> tasks)
-
-        interface Callable<T>
-            T call()
-        
-        interface Future<T>
-            T get()
-            boolean isDone()
-            boolean cancel()
-         */
-        var s = "toFind";
-        var text = "very long text";
-
-        ExecutorService service = Executors.newFixedThreadPool(4);
-        Callable<Boolean> task = () -> search(s, text);
+        // ExecutorService + Callable + Future.
+        ExecutorService service = Executors.newFixedThreadPool(2);
+        Callable<Boolean> task = () -> "very long text".contains("long");
         Future<Boolean> future = service.submit(task);
+        System.out.println("future.get = " + future.get());
+        service.shutdown();
 
-        while (!future.isDone()) {
-            Thread.sleep(100);
+        // Пул потоков + батч задач.
+        String[] words = {"CO2", "H2O", "NaCl"};
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        for (String w : words) {
+            Future<Boolean> f = pool.submit(() -> w.contains("O"));
+            System.out.println(w + " -> " + f.get());
         }
+        pool.shutdown();
 
-        boolean res = future.get();
-        System.out.println(res);
+        // ForkJoin: divide and conquer, work stealing.
+        class DoubleTask extends RecursiveAction {
 
-        // scheduledExecutorService
-        // pools - reuse of threads
-        // ThreadPoolExecutor - implements ExecutorService
-        // corePoolSize, maximumPoolSize, keepAliveTime
-        // Executors - static methods for creating ExecutorServices
-        String[] arr = {"CO2", "H2O", "NaCl"};
-
-        var pool = Executors.newFixedThreadPool(2);
-        for (String elem : arr) {
-            var future2 = pool.submit(() -> search(elem, text));
-            System.out.println(future2.get());
-        }
-
-        // ForkJoin framework (parralel, divide and conquer, work stealing)
-        // ForkJoinPool, ForkJoinTaskm RecursiveAction, RecursiveTask
-        class Task extends RecursiveAction {
-
+            static final int THRESHOLD = 1_000_000;
             final int[] array;
             final int lo, hi;
-            final static int SIZE = 10;
 
-            Task(int[] array, int lo, int hi) {
-                this.array = array;
+            DoubleTask(int[] a, int lo, int hi) {
+                array = a;
                 this.lo = lo;
                 this.hi = hi;
             }
 
-            @Override
             protected void compute() {
-                if ((hi - lo) < SIZE) {
+                if (hi - lo < THRESHOLD) {
                     for (int i = lo; i < hi; i++) {
                         array[i] *= 2;
                     }
                 } else {
                     int mid = (lo + hi) / 2;
-                    var task1 = new Task(array, lo, mid);
-                    var task2 = new Task(array, mid, hi);
-                    task1.fork();
-                    task2.fork();
-                    task2.join();
-                    task1.join();
+                    invokeAll(new DoubleTask(array, lo, mid),
+                            new DoubleTask(array, mid, hi));
                 }
             }
         }
+        int[] array = new int[4_000_000];
+        Arrays.fill(array, 1);
+        ForkJoinPool.commonPool().invoke(new DoubleTask(array, 0, array.length));
+        System.out.println("array[0] = " + array[0]);
 
-        int[] array = new int[33554432];
-        Arrays.parallelSetAll(array, i -> 1);
-        var bigtask = new Task(array, 0, array.length);
-        var FJPool = ForkJoinPool.commonPool();
-        FJPool.invoke(bigtask);
-
-        /* CompletableFuture
-
+        // CompletableFuture — композиция асинхронных шагов.
         CompletableFuture
-            .supplyAsync( () -> getResult() )
-            .thenApply( String::toUpperCase )
-            .thenAccept( System.out::println );
-         */
-        // Parallel Streams
-        // Spliterators (Stream API)
-        // interface Lock - synchonized analog
-        // interface Condition - wait-notify analog
-        // ReentrantLock, ReadriteLock, ReentrantReadriteLock
-        Lock lock = new ReentrantLock();
-        Condition notFull = lock.newCondition();
-        Condition notEmpty = lock.newCondition();
-        int[] values = new int[100];
-        int count = 0;
-
-        // semaphore
-        // countDownLatch
-        // CyclicBarrier
-        // Phaser
-        // Exchanger<V>
-        // BlockingQueue, BlockingDeque
-        // ArrayBlockingQueue
-        // LinkedBlockingQueue
-        // LinkedBlockingDeque
-        // PriorityBlockingQueue
-        // DelayQueue<E extends Delayed>
-        // SynchronousQueue
-        // interface TransferrQueue extends BlockingQueue
-        // LinkedTransferQueue implements TransferQueue
-        // ConcurrentMap, ConcurrentNavigableMap
-        // ConcurrentLinkedQueue
-        // CopyOnWriteArrayList / CopyOnWriteArraySet
-        // atomic operations (CAS, compare and swap)
-        class fakeCAS {
-
-            int value;
-            atomic
-
-            int cmpxchg(int expected, int updated) {
-                int old = value;
-                if (old == expected) {
-                    value = updated;
-                }
-                return old;
-            }
-            atomic
-
-            int get() {
-                return value;
-            }
-        }
-
-        var fcas = new fakeCAS();
-        /*
-        int increment() {
-            int v;
-            do {
-                v = fcas.get();
-            } while (v != fcas.cmpxchg(v, v + 1));
-            return v + 1;
-        }
-         */
-
-        // java.util.concurrent.atomic
-        // AtomicInteger, AtomicLong
-        // AtomicBoolean, AtomicReference
-        // AtomicIntegerArray
-        // LongAccumulator, DoubleAccumulator
-        // LongAdder, DoubleAdder
-        class Count {
-
-            AtomicInteger counter = new AtomicInteger(0);
-
-            public void up() {
-                counter.incrementAndGet();
-            }
-
-            public void down() {
-                counter.decrementAndGet();
-            }
-        }
-
-        List<String> keys; // список строк для подсчета
-        ConcurrentHashMap<String, LongAdder> counter; // счетчик
-        counter = new ConcurrentHashMap<>();
-        for (String key : keys) {
-            counter.computeIfAbsent(key, LongAdder::new).increment();
-        }
+                .supplyAsync(() -> "result")
+                .thenApply(String::toUpperCase)
+                .thenAccept(System.out::println)
+                .join();
     }
 
-    static public boolean search(String s, String text) {
-        return text.contains(s);
+    // --- 4. Синхронизаторы и атомарные коллекции ----------------------------
+    static void synchronizersAndAtomics() throws Exception {
+        // Lock / Condition — гибче synchronized.
+        Lock lock = new ReentrantLock();
+        Condition notEmpty = lock.newCondition();
+        lock.lock();
+        try {
+            // критическая секция
+        } finally {
+            lock.unlock();
+        }
+
+        // Semaphore — ограничение числа одновременных доступов.
+        Semaphore semaphore = new Semaphore(2);
+        semaphore.acquire();
+        try {
+            // ... критическая работа ...
+        } finally {
+            semaphore.release();
+        }
+
+        // CountDownLatch — ждать N событий.
+        CountDownLatch latch = new CountDownLatch(2);
+        Runnable worker = () -> {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException ignored) {
+            }
+            latch.countDown();
+        };
+        new Thread(worker).start();
+        new Thread(worker).start();
+        latch.await();
+        System.out.println("latch opened");
+
+        // BlockingQueue — producer / consumer без ручной синхронизации.
+        BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(10);
+        Thread producer = new Thread(() -> {
+            try {
+                queue.put(42);
+            } catch (InterruptedException ignored) {
+            }
+        });
+        Thread consumer = new Thread(() -> {
+            try {
+                System.out.println("took " + queue.take());
+            } catch (InterruptedException ignored) {
+            }
+        });
+        producer.start();
+        consumer.start();
+        producer.join();
+        consumer.join();
+
+        // AtomicInteger — CAS-инкремент без блокировок.
+        AtomicInteger counter = new AtomicInteger();
+        counter.incrementAndGet();
+        counter.addAndGet(10);
+        System.out.println("atomic = " + counter.get());
+
+        // ConcurrentHashMap + LongAdder — частотный анализ.
+        var freq = new ConcurrentHashMap<String, LongAdder>();
+        for (String key : List.of("a", "b", "a", "c", "a")) {
+            freq.computeIfAbsent(key, k -> new LongAdder()).increment();
+        }
+        System.out.println("freq = " + freq);
+
+        // CopyOnWriteArrayList — read-heavy сценарии.
+        var list = new CopyOnWriteArrayList<String>();
+        list.add("x");
     }
 }

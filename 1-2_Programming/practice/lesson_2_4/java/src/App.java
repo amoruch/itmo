@@ -1,10 +1,10 @@
-import java.security.MessageDigest;
+
 import java.security.SecureRandom;
 import java.sql.Connection;
+import java.sql.Driver;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Driver;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -16,7 +16,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.sql.rowset.CachedRowSet;
@@ -36,7 +35,9 @@ public class App {
         part6Passwords();
     }
 
-    /** Функциональный интерфейс определяет форму лямбды. */
+    /**
+     * Функциональный интерфейс определяет форму лямбды.
+     */
     static void part1FunctionalInterfaces() {
         Supplier<String> greeting = () -> "Привет";
         Consumer<String> print = System.out::println;
@@ -48,7 +49,9 @@ public class App {
         System.out.println("Длинное слово: " + isLong.test("Java"));
     }
 
-    /** Stream — одноразовый ленивый конвейер: источник → операции → результат. */
+    /**
+     * Stream — одноразовый ленивый конвейер: источник → операции → результат.
+     */
     static void part2Streams() {
         List<Student> students = List.of(
                 new Student("Аня", "P3115", 4.9),
@@ -64,14 +67,18 @@ public class App {
         System.out.println("Лучший студент: " + best.orElseThrow());
     }
 
-    /** SQL-значения передают параметрами, а не склеивают со строкой запроса. */
+    /**
+     * SQL-значения передают параметрами, а не склеивают со строкой запроса.
+     */
     static void part3SqlAndJdbc() {
         String query = "SELECT name, average_mark FROM students WHERE group_name = ?";
         System.out.println(query);
         System.out.println("? будет передан через PreparedStatement.setString(1, group).");
     }
 
-    /** CachedRowSet можно настроить отдельно от постоянного соединения с БД. */
+    /**
+     * CachedRowSet можно настроить отдельно от постоянного соединения с БД.
+     */
     static void part4RowSet() throws SQLException {
         CachedRowSet rowSet = RowSetProvider.newFactory().createCachedRowSet();
         rowSet.setCommand("SELECT name FROM students WHERE group_name = ?");
@@ -79,7 +86,10 @@ public class App {
         System.out.println("RowSet command: " + rowSet.getCommand());
     }
 
-    /** ServiceLoader ищет реализации интерфейса, а модуль выражает зависимость явно. */
+    /**
+     * ServiceLoader ищет реализации интерфейса, а модуль выражает зависимость
+     * явно.
+     */
     static void part5ServicesAndModules() {
         long driverProviders = ServiceLoader.load(Driver.class).stream().count();
         boolean sqlModulePresent = ModuleLayer.boot().findModule("java.sql").isPresent();
@@ -88,7 +98,9 @@ public class App {
         System.out.println("Модуль java.sql доступен: " + sqlModulePresent);
     }
 
-    /** Пароль превращают в медленный производный ключ с уникальной солью. */
+    /**
+     * Пароль превращают в медленный производный ключ с уникальной солью.
+     */
     static void part6Passwords() throws Exception {
         byte[] salt = new byte[16];
         new SecureRandom().nextBytes(salt);
@@ -102,7 +114,9 @@ public class App {
         }
     }
 
-    /** Этот шаблон выполняют после получения реального Connection. */
+    /**
+     * Этот шаблон выполняют после получения реального Connection.
+     */
     static void findStudents(Connection connection, String group) throws SQLException {
         String query = "SELECT name, average_mark FROM students WHERE group_name = ?";
 
@@ -130,5 +144,6 @@ public class App {
     }
 
     record Student(String name, String group, double averageMark) {
+
     }
 }

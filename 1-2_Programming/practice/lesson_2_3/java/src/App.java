@@ -1,270 +1,168 @@
 
-import java.util.Arrays;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-import java.util.concurrent.locks.*;
+import java.util.function.Consumer;
+import java.util.function.IntUnaryOperator;
+import java.util.function.Predicate;
 
 /**
- * Практика 5 — многопоточность.
+ * Урок 2.3 — NIO, сеть, дата-время и лямбды.
  */
 public class App {
 
     public static void main(String[] args) throws Exception {
-        threadsAndRunnable();
-        synchronization();
-        executorsAndPools();
-        synchronizersAndAtomics();
+        part1Buffers();
+        part2Channels();
+        part3NetworkAddresses();
+        part4Selector();
+        part5UriAndUrl();
+        part6DateAndTime();
+        part7Lambdas();
     }
 
-    // --- 1. Потоки и Runnable ------------------------------------------------
-    static void threadsAndRunnable() throws InterruptedException {
-        // Runnable — задача, Thread — исполнитель.
-        new Thread(() -> System.out.println("task on " + Thread.currentThread().getName())).start();
+    /**
+     * Буфер: запись → flip() → чтение.
+     */
+    static void part1Buffers() {
+        ByteBuffer buffer = ByteBuffer.allocate(16);
+        buffer.putInt(2026);
+        buffer.put("Java".getBytes(UTF_8));
+        System.out.println("before flip: position=" + buffer.position() + ", limit=" + buffer.limit());
 
-        // Свой поток с настройками.
-        Thread worker = new Thread(() -> {
-        });
-        worker.setName("worker");
-        worker.setDaemon(true);
-        worker.start();
-        worker.join();
+        buffer.flip();
+        int year = buffer.getInt();
+        byte[] letters = new byte[buffer.remaining()];
+        buffer.get(letters);
+        System.out.println(year + " " + new String(letters, UTF_8));
 
-        // Прерывание спящего потока.
-        Thread sleeper = new Thread(() -> {
-            try {
-                Thread.sleep(1000);
-                System.out.println("not reached");
-            } catch (InterruptedException e) {
-                System.out.println("interrupted");
-            }
-        });
-        sleeper.start();
-        sleeper.interrupt();
-        sleeper.join();
-
-        // Порядок между потоками недетерминирован.
-        Runnable printer = () -> System.out.print(Thread.currentThread().getName() + " ");
-        for (int i = 0; i < 5; i++) {
-            new Thread(printer).start();
-        }
-        Thread.sleep(100);
-        System.out.println();
+        buffer.clear();
+        System.out.println("after clear: position=" + buffer.position() + ", limit=" + buffer.limit());
     }
 
-    // --- 2. Гонки, synchronized, volatile, wait/notify ----------------------
-    static void synchronization() throws InterruptedException {
-        // counter++ — не атомарная операция: load → add → store.
-        class Shared {
+    /**
+     * FileChannel читает и пишет байты через ByteBuffer.
+     */
+    static void part2Channels() throws IOException {
+        Path file = Files.createTempFile("nio-practice-", ".txt");
 
-            int counter = 0;
+        try (FileChannel channel = FileChannel.open(file, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+            channel.write(UTF_8.encode("channel"));
+            channel.position(0);
 
-            synchronized void up() {
-                counter++;
-            }
-
-            synchronized void down() {
-                counter--;
-            }
-        }
-        Shared sh = new Shared();
-        Thread a = new Thread(sh::up);
-        Thread b = new Thread(sh::down);
-        a.start();
-        b.start();
-        a.join();
-        b.join();
-        System.out.println("counter = " + sh.counter);
-
-        // volatile — видимость без кэша, но не атомарность.
-        class Loop extends Thread {
-
-            volatile boolean done = false;
-
-            public void run() {
-                while (!done) {
-                }
-            }
-        }
-        Loop loop = new Loop();
-        loop.start();
-        Thread.sleep(50);
-        loop.done = true;
-        loop.join();
-        System.out.println("loop stopped");
-
-        // wait / notify — обмен через монитор объекта.
-        class Box {
-
-            private int value;
-            private boolean ready;
-
-            synchronized void put(int v) throws InterruptedException {
-                while (ready) {
-                    wait();
-                }
-                value = v;
-                ready = true;
-                notifyAll();
-            }
-
-            synchronized int get() throws InterruptedException {
-                while (!ready) {
-                    wait();
-                }
-                ready = false;
-                notifyAll();
-                return value;
-            }
-        }
-        Box box = new Box();
-        Thread producer = new Thread(() -> {
-            try {
-                box.put(100);
-            } catch (InterruptedException ignored) {
-            }
-        });
-        Thread consumer = new Thread(() -> {
-            try {
-                System.out.println("got " + box.get());
-            } catch (InterruptedException ignored) {
-            }
-        });
-        producer.start();
-        consumer.start();
-        producer.join();
-        consumer.join();
-    }
-
-    // --- 3. Executor, пулы, ForkJoin, CompletableFuture ----------------------
-    static void executorsAndPools() throws Exception {
-        // Executor — абстракция исполнителя.
-        Executor executor = task -> new Thread(task).start();
-        executor.execute(() -> System.out.println("via Executor"));
-
-        // ExecutorService + Callable + Future.
-        ExecutorService service = Executors.newFixedThreadPool(2);
-        Callable<Boolean> task = () -> "very long text".contains("long");
-        Future<Boolean> future = service.submit(task);
-        System.out.println("future.get = " + future.get());
-        service.shutdown();
-
-        // Пул потоков + батч задач.
-        String[] words = {"CO2", "H2O", "NaCl"};
-        ExecutorService pool = Executors.newFixedThreadPool(2);
-        for (String w : words) {
-            Future<Boolean> f = pool.submit(() -> w.contains("O"));
-            System.out.println(w + " -> " + f.get());
-        }
-        pool.shutdown();
-
-        // ForkJoin: divide and conquer, work stealing.
-        class DoubleTask extends RecursiveAction {
-
-            static final int THRESHOLD = 1_000_000;
-            final int[] array;
-            final int lo, hi;
-
-            DoubleTask(int[] a, int lo, int hi) {
-                array = a;
-                this.lo = lo;
-                this.hi = hi;
-            }
-
-            protected void compute() {
-                if (hi - lo < THRESHOLD) {
-                    for (int i = lo; i < hi; i++) {
-                        array[i] *= 2;
-                    }
-                } else {
-                    int mid = (lo + hi) / 2;
-                    invokeAll(new DoubleTask(array, lo, mid),
-                            new DoubleTask(array, mid, hi));
-                }
-            }
-        }
-        int[] array = new int[4_000_000];
-        Arrays.fill(array, 1);
-        ForkJoinPool.commonPool().invoke(new DoubleTask(array, 0, array.length));
-        System.out.println("array[0] = " + array[0]);
-
-        // CompletableFuture — композиция асинхронных шагов.
-        CompletableFuture
-                .supplyAsync(() -> "result")
-                .thenApply(String::toUpperCase)
-                .thenAccept(System.out::println)
-                .join();
-    }
-
-    // --- 4. Синхронизаторы и атомарные коллекции ----------------------------
-    static void synchronizersAndAtomics() throws Exception {
-        // Lock / Condition — гибче synchronized.
-        Lock lock = new ReentrantLock();
-        Condition notEmpty = lock.newCondition();
-        lock.lock();
-        try {
-            // критическая секция
+            ByteBuffer buffer = ByteBuffer.allocate((int) channel.size());
+            channel.read(buffer);
+            buffer.flip();
+            System.out.println(UTF_8.decode(buffer));
         } finally {
-            lock.unlock();
+            Files.deleteIfExists(file);
         }
+    }
 
-        // Semaphore — ограничение числа одновременных доступов.
-        Semaphore semaphore = new Semaphore(2);
-        semaphore.acquire();
-        try {
-            // ... критическая работа ...
-        } finally {
-            semaphore.release();
+    /**
+     * Адрес состоит из IP (или имени хоста) и порта.
+     */
+    static void part3NetworkAddresses() throws IOException {
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        InetSocketAddress endpoint = new InetSocketAddress(loopback, 8080);
+        byte[] data = "ping".getBytes(UTF_8);
+        DatagramPacket packet = new DatagramPacket(data, data.length, endpoint);
+
+        System.out.println(packet.getAddress().getHostAddress() + ":" + packet.getPort());
+        System.out.println("TCP передаёт поток данных, UDP — независимые датаграммы.");
+    }
+
+    /**
+     * Selector позволяет одному потоку следить за несколькими неблокирующими
+     * каналами.
+     */
+    static void part4Selector() throws IOException {
+        try (Selector selector = Selector.open(); ServerSocketChannel server = ServerSocketChannel.open()) {
+            server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            server.configureBlocking(false);
+            SelectionKey key = server.register(selector, SelectionKey.OP_ACCEPT);
+
+            System.out.println("selector key: accept=" + key.isAcceptable() + ", valid=" + key.isValid());
         }
+    }
 
-        // CountDownLatch — ждать N событий.
-        CountDownLatch latch = new CountDownLatch(2);
-        Runnable worker = () -> {
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException ignored) {
+    /**
+     * URI разбирает адрес, URL умеет создавать URLConnection.
+     */
+    static void part5UriAndUrl() throws Exception {
+        URI uri = new URI("https://example.com:443/api?course=java#nio");
+        URL url = uri.toURL();
+
+        System.out.println(uri.getScheme() + ": host=" + uri.getHost() + ", path=" + uri.getPath());
+        System.out.println("URL protocol=" + url.getProtocol() + ", default port=" + url.getDefaultPort());
+    }
+
+    /**
+     * Старый Date можно перевести в современный неизменяемый java.time.
+     */
+    static void part6DateAndTime() {
+        Instant moment = Instant.now();
+        Date legacyDate = Date.from(moment);
+        ZonedDateTime moscowTime = moment.atZone(ZoneId.of("Europe/Moscow"));
+        LocalDate deadline = LocalDate.of(2026, 9, 30);
+
+        System.out.println("legacy → instant: " + legacyDate.toInstant());
+        System.out.println(moscowTime.format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+        ZonedDateTime deadlineStart = deadline.atStartOfDay(ZoneId.of("Europe/Moscow"));
+        System.out.println("until deadline: " + Duration.between(moment, deadlineStart));
+    }
+
+    /**
+     * Predicate и Consumer делают отбор и обработку универсальными.
+     */
+    static void part7Lambdas() {
+        List<Student> students = List.of(
+                new Student("Аня", "P3115", 19, 4.9),
+                new Student("Борис", "P3115", 21, 4.8),
+                new Student("Вика", "P3116", 18, 4.6)
+        );
+
+        handle(students, student -> student.age() < 20 && student.averageMark() > 4.75, System.out::println);
+
+        int factor = 2; // effectively final: его можно захватить лямбдой.
+        IntUnaryOperator doubleValue = value -> value * factor;
+        System.out.println("7 * 2 = " + doubleValue.applyAsInt(7));
+        System.out.println("factorial(5) = " + factorial(5));
+    }
+
+    static <T> void handle(Iterable<T> values, Predicate<? super T> filter, Consumer<? super T> action) {
+        for (T value : values) {
+            if (filter.test(value)) {
+                action.accept(value);
             }
-            latch.countDown();
-        };
-        new Thread(worker).start();
-        new Thread(worker).start();
-        latch.await();
-        System.out.println("latch opened");
-
-        // BlockingQueue — producer / consumer без ручной синхронизации.
-        BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(10);
-        Thread producer = new Thread(() -> {
-            try {
-                queue.put(42);
-            } catch (InterruptedException ignored) {
-            }
-        });
-        Thread consumer = new Thread(() -> {
-            try {
-                System.out.println("took " + queue.take());
-            } catch (InterruptedException ignored) {
-            }
-        });
-        producer.start();
-        consumer.start();
-        producer.join();
-        consumer.join();
-
-        // AtomicInteger — CAS-инкремент без блокировок.
-        AtomicInteger counter = new AtomicInteger();
-        counter.incrementAndGet();
-        counter.addAndGet(10);
-        System.out.println("atomic = " + counter.get());
-
-        // ConcurrentHashMap + LongAdder — частотный анализ.
-        var freq = new ConcurrentHashMap<String, LongAdder>();
-        for (String key : List.of("a", "b", "a", "c", "a")) {
-            freq.computeIfAbsent(key, k -> new LongAdder()).increment();
         }
-        System.out.println("freq = " + freq);
+    }
 
-        // CopyOnWriteArrayList — read-heavy сценарии.
-        var list = new CopyOnWriteArrayList<String>();
-        list.add("x");
+    static int factorial(int value) {
+        return value <= 1 ? 1 : value * factorial(value - 1);
+    }
+
+    record Student(String name, String group, int age, double averageMark) {
+
     }
 }
