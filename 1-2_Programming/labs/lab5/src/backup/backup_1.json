@@ -1,0 +1,36 @@
+[
+    {
+        "id": 10,
+        "name": "Egor",
+        "coordinates": {
+            "x": 0,
+            "y": 0
+        },
+        "creationDate": "2007-03-22T18:38:20.486432862+03:00[Europe/Moscow]",
+        "health": 2.1,
+        "loyal": true,
+        "category": "APOTHECARY",
+        "meleeWeapon": "LIGHTING_CLAW",
+        "chapter": {
+            "name": "Astartes",
+            "world": "Earth"
+        }
+    },
+    {
+        "id": 11,
+        "name": "Roman",
+        "coordinates": {
+            "x": 1,
+            "y": 1
+        },
+        "creationDate": "2006-11-22T18:38:20.486432862+03:00[Europe/Moscow]",
+        "health": 1.1,
+        "loyal": true,
+        "category": "ASSAULT",
+        "meleeWeapon": "MANREAPER",
+        "chapter": {
+            "name": "Astartes",
+            "world": "Earth"
+        }
+    }
+]

@@ -1,0 +1,30 @@
+# Maven build output
+target/
+
+# Java compiler output and packaged artifacts
+*.class
+*.jar
+build/
+dist/
+
+# IDE files
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+
+# Keep the shared Maven import settings for VS Code, ignore local editor state.
+.vscode/*
+!.vscode/settings.json
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+*.swp
+*.out
+*.aux
+*.gz
+*.toc
+*~

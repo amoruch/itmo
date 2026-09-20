@@ -1,0 +1,101 @@
+[
+  {
+    "id": 17,
+    "name": "1",
+    "coordinates": {
+      "x": 1,
+      "y": 1
+    },
+    "creationDate": "2026-09-04T15:37:41.314550100+03:00[Europe/Moscow]",
+    "health": 1.0,
+    "loyal": true,
+    "category": "ASSAULT",
+    "meleeWeapon": "POWER_SWORD",
+    "chapter": {
+      "name": "1",
+      "world": "1"
+    }
+  },
+  {
+    "id": 12,
+    "name": "aboba",
+    "coordinates": {
+      "x": 0,
+      "y": 0
+    },
+    "creationDate": "2026-03-24T19:26:36.174458510+03:00[Europe/Moscow]",
+    "health": 2.0,
+    "loyal": true,
+    "category": "TACTICAL",
+    "meleeWeapon": "POWER_SWORD",
+    "chapter": {
+      "name": "MilkiWay",
+      "world": "Viltrum"
+    }
+  },
+  {
+    "id": 13,
+    "name": "aboba",
+    "coordinates": {
+      "x": 0,
+      "y": 0
+    },
+    "creationDate": "2026-03-24T19:28:16.981533679+03:00[Europe/Moscow]",
+    "health": 2.0,
+    "loyal": false,
+    "category": "TACTICAL",
+    "meleeWeapon": "POWER_SWORD",
+    "chapter": null
+  },
+  {
+    "id": 14,
+    "name": "aboba",
+    "coordinates": {
+      "x": 0,
+      "y": 0
+    },
+    "creationDate": "2026-03-24T19:30:13.045383720+03:00[Europe/Moscow]",
+    "health": 2.0,
+    "loyal": false,
+    "category": "TACTICAL",
+    "meleeWeapon": "POWER_SWORD",
+    "chapter": {
+      "name": "MilkyWay",
+      "world": "Viltrum"
+    }
+  },
+  {
+    "id": 16,
+    "name": "aboba",
+    "coordinates": {
+      "x": 0,
+      "y": 0
+    },
+    "creationDate": "2026-03-24T19:31:27.467313138+03:00[Europe/Moscow]",
+    "health": 2.0,
+    "loyal": true,
+    "category": "TACTICAL",
+    "meleeWeapon": "POWER_SWORD",
+    "chapter": {
+      "name": "MilkyWay",
+      "world": "Viltrum"
+    }
+  },
+  {
+    "id": 11,
+    "name": "Roman",
+    "coordinates": {
+      "x": 1,
+      "y": 1
+    },
+    "creationDate": "2006-11-22T18:38:20.486432862+03:00[Europe/Moscow]",
+    "health": 1.1,
+    "loyal": true,
+    "category": "ASSAULT",
+    "meleeWeapon": "MANREAPER",
+    "chapter": {
+      "name": "Astartes",
+      "world": "Earth"
+    }
+  }
+]

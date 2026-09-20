@@ -1,0 +1,96 @@
+% Лабораторная работа № 7. Компиляция: pdflatex report_lab7.tex дважды.
+\documentclass[a4paper,14pt]{extarticle}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{fancyvrb}
+\usepackage[hidelinks,unicode]{hyperref}
+
+\geometry{left=30mm,right=15mm,top=20mm,bottom=20mm}
+\onehalfspacing
+\setlength{\parindent}{12.5mm}
+\setlength{\parskip}{0pt}
+\setlength{\emergencystretch}{3em}
+\renewcommand{\contentsname}{СОДЕРЖАНИЕ}
+\renewcommand{\refname}{СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ}
+\titleformat{\section}{\centering\bfseries\fontsize{14pt}{16pt}\selectfont}{\thesection}{1em}{}
+\titleformat{\subsection}{\bfseries\fontsize{14pt}{16pt}\selectfont}{\thesubsection}{1em}{}
+\titlespacing*{\section}{0pt}{12pt}{12pt}
+\titlespacing*{\subsection}{\parindent}{12pt}{6pt}
+\setlist{nosep}
+\setcounter{tocdepth}{2}
+\hypersetup{pdftitle={Отчёт по лабораторной работе № 7},pdfauthor={Студент группы P3113}}
+
+\begin{document}
+\begin{titlepage}
+\begin{center}
+Федеральное государственное автономное образовательное учреждение\\
+высшего образования\\
+\textbf{«Национальный исследовательский университет ИТМО»}\\[10mm]
+
+Факультет программной инженерии и компьютерной техники\\
+Дисциплина «Программирование»\\[34mm]
+
+{\large Лабораторная работа № 7}\\[4mm]
+Многопользовательское клиент-серверное приложение\\
+Вариант \textbf{9585}
+\end{center}
+
+\vfill
+\begin{flushright}
+Выполнил:\\
+Студент группы P3113
+Ушаков Роман Павлович\\[5mm]
+Проверил:\\
+Гиря Максим Дмитриевич
+
+\end{flushright}
+
+\vfill
+\begin{center}
+г. Санкт-Петербург\\ 2026
+\end{center}
+\end{titlepage}
+
+\setcounter{page}{2}
+\tableofcontents
+\newpage
+
+\section{Задание}
+
+Переработать клиент-серверное приложение из лабораторной работы №6. Сервер должен хранить коллекцию в базе данных PostgreSQL, поддерживать регистрацию и авторизацию пользователей, а также выполнять изменяющие команды только для объектов их владельцев. Необходимо обеспечить потокобезопасную работу сервера и журналирование его действий.
+
+\section{Цель работы}
+
+Освоить работу с реляционными базами данных через JDBC, реализацию аутентификации и разграничения доступа в клиент-серверном приложении, а также многопоточную обработку запросов.
+
+\section{Используемые средства}
+
+Язык реализации --- Java~17. Сборка выполняется Apache Maven. Для постоянного хранения коллекции используется PostgreSQL и JDBC-драйвер. Передача сериализованных объектов выполняется по UDP с помощью \texttt{DatagramChannel}. Пароли пользователей хранятся в виде SHA-224-хэшей. Журналирование реализовано библиотекой Log4j2.
+
+\section{Диаграмма классов UML}
+
+UML-диаграмма основных классов вынесена в отдельный файл \href{uml_class_diagram.pdf}{\texttt{uml\_class\_diagram.pdf}}. Её исходник в TikZ находится в файле \texttt{uml\_class\_diagram.tex} рядом с данным документом.
+
+\section{Исходный код программы}
+
+Исходный код и SQL-скрипты находятся в каталоге лабораторной работы в репозитории. В каталоге \texttt{sql} расположены схема базы данных, скрипт начального заполнения и проверочные запросы.
+
+\section{Результат работы программы}
+
+Программа разделена на модули клиента, сервера и общих классов. При запуске сервер через JDBC загружает коллекцию \texttt{SpaceMarine} из PostgreSQL в потокобезопасные структуры данных. Команды чтения работают с коллекцией в памяти; изменяющие операции сначала выполняются в базе данных и после успешного SQL-запроса отражаются в памяти.
+
+Клиент поддерживает команды \texttt{register} и \texttt{login}. После авторизации пользователь может просматривать всю коллекцию, а изменять и удалять --- только созданные им объекты. Идентификатор и дата создания нового объекта назначаются PostgreSQL. Сервер принимает UDP-запросы в отдельном потоке, создаёт поток для обработки каждого запроса и отправляет ответы через кэшируемый пул потоков. Ход работы и ошибки записываются Log4j2 в консоль и журнал запуска.
+
+\end{document}

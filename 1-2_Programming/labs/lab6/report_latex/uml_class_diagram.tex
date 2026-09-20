@@ -1,0 +1,281 @@
+\documentclass[a4paper,landscape,11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+
+\pagestyle{empty}
+\geometry{margin=12mm}
+
+\tikzset{
+	uml/.style={
+		draw,
+		rounded corners=1pt,
+		align=left,
+		font=\scriptsize,
+		text width=43mm,
+		inner sep=3pt,
+		minimum height=12mm
+	},
+	relation/.style={
+		-{Stealth[length=2mm]},
+		line width=.45pt
+	},
+	dependency/.style={
+		-{Stealth[length=2mm]},
+		dashed,
+		line width=.45pt
+	}
+}
+
+\begin{document}
+	
+	\begin{center}
+		\Large\textbf{UML-диаграмма классов клиент-серверного приложения}
+	\end{center}
+	
+	\vspace{4mm}
+	\centering
+	
+	\begin{tikzpicture}[x=1cm, y=1cm]
+		
+		% ===================== Клиентская часть =====================
+		
+		\node[uml] (ClientMain) at (-10,0)
+		{
+			\textbf{client::Main}\\
+			\hrulefill\\
+			+ main(String[]): void
+		};
+		
+		\node[uml] (ClientConsole) at (-10,3)
+		{
+			\textbf{client::Console}\\
+			\hrulefill\\
+			+ readln(): String\\
+			+ println(Object): void\\
+			+ printError(Object): void
+		};
+		
+		\node[uml] (ClientCommandManager) at (-4,3)
+		{
+			\textbf{client::CommandManager}\\
+			\hrulefill\\
+			- client: DatagramClient\\
+			- commands: Map<String, Command>\\
+			- activeScripts: Set<Path>\\
+			- activeAsks: Deque<Ask>
+		};
+		
+		\node[uml] (DatagramClient) at (-4,0)
+		{
+			\textbf{client::DatagramClient}\\
+			\hrulefill\\
+			- channel: DatagramChannel\\
+			- server: SocketAddress\\
+			+ request(Request): Response\\
+			+ close(): void
+		};
+		
+		\node[uml] (ClientCommand) at (2,3)
+		{
+			\textbf{client::Command}\\
+			\hrulefill\\
+			+ type(): CommandType\\
+			+ apply(Request): Response\\
+			\hrulefill\\
+			Help, Info, Show, Add,\\
+			Update, Save, Exit, \ldots
+		};
+		
+		% ===================== Общие классы =====================
+		
+		\node[uml] (DatagramTransfer) at (-4,-4)
+		{
+			\textbf{common::DatagramTransfer}\\
+			\hrulefill\\
+			+ send(channel, data, addr): void\\
+			+ receive(channel, timeout): ReceivedData\\
+			+ receiveAvailable(...): ReceivedData
+		};
+		
+		\node[uml] (request) at (-10,-4)
+		{
+			\textbf{common::Protocol.Request}\\
+			\hrulefill\\
+			- command: CommandType\\
+			- payload: Payload
+		};
+		
+		\node[uml] (response) at (2,-4)
+		{
+			\textbf{common::Protocol.Response}\\
+			\hrulefill\\
+			- ok: boolean\\
+			- message: String
+		};
+		
+		\node[uml] (Model) at (8,-4)
+		{
+			\textbf{common::Model.SpaceMarine}\\
+			\hrulefill\\
+			- id, name, health\\
+			- coordinates: Coordinates\\
+			- creationDate: ZonedDateTime\\
+			- chapter: Chapter\\
+			+ compareTo(SpaceMarine)
+		};
+		
+		% ===================== Серверная часть =====================
+		
+		\node[uml] (ServerMain) at (-10,-9)
+		{
+			\textbf{server::Main}\\
+			\hrulefill\\
+			+ main(String[]): void
+		};
+		
+		\node[uml] (ServerConsole) at (-10,-12)
+		{
+			\textbf{server::Console}\\
+			\hrulefill\\
+			+ readln(): String\\
+			+ println(Object): void\\
+			+ printError(Object): void
+		};
+		
+		\node[uml] (datagram) at (-4,-9)
+		{
+			\textbf{server::DatagramServer}\\
+			\hrulefill\\
+			- channel: DatagramChannel\\
+			+ run(): void\\
+			+ stop(): void
+		};
+		
+		\node[uml] (handler) at (-4,-12)
+		{
+			\textbf{managers::ServerCommandManager}\\
+			\hrulefill\\
+			+ handle(Request): Response\\
+			+ runConsole(): void
+		};
+		
+		\node[uml] (command) at (2,-9)
+		{
+			\textbf{commands::Command}\\
+			\hrulefill\\
+			+ type(): CommandType\\
+			+ apply(Request): Response\\
+			\hrulefill\\
+			Add, Update, RemoveById,\\
+			Save, Exit, \ldots
+		};
+		
+		\node[uml] (service) at (8,-9)
+		{
+			\textbf{managers::CollectionManager}\\
+			\hrulefill\\
+			- collection: LinkedList<SpaceMarine>\\
+			- currentId: int\\
+			+ add(), update(), clear()\\
+			+ snapshot(), descending()
+		};
+		
+		\node[uml] (storage) at (8,-12)
+		{
+			\textbf{managers::DumpManager}\\
+			\hrulefill\\
+			+ readCollection(): LinkedList\\
+			+ writeCollection(): void
+		};
+		
+		\node[uml] (manager) at (2,-12)
+		{
+			\textbf{managers::CommandManager}\\
+			\hrulefill\\
+			- commands: Map\\
+			- history: Deque\\
+			+ register(), getCommand()
+		};
+		
+		% ===================== Связи: клиент =====================
+		
+		\draw[dependency]
+		(ClientMain) -- node[above, font=\scriptsize]{создаёт} (DatagramClient);
+		
+		\draw[dependency]
+		(ClientMain) -- node[above, font=\scriptsize]{создаёт} (ClientCommandManager);
+		
+		\draw[dependency]
+		(ClientMain) -- node[left, font=\scriptsize]{создаёт} (ClientConsole);
+		
+		\draw[dependency]
+		(ClientCommandManager) -- node[above, font=\scriptsize]{использует} (ClientConsole);
+		
+		\draw[dependency]
+		(ClientCommandManager) -- node[left, font=\scriptsize]{использует} (DatagramClient);
+		
+		\draw[dependency]
+		(ClientCommandManager) -- node[above, font=\scriptsize]{использует} (ClientCommand);
+	
+		
+		% ===================== Связи: сервер =====================
+		
+		\draw[dependency]
+		(ServerMain) -- node[left, font=\scriptsize]{создаёт} (handler);
+		
+		\draw[dependency]
+		(ServerMain) -- node[above, font=\scriptsize]{запускает} (datagram);
+		
+		\draw[dependency]
+		(ServerMain) -- node[left, font=\scriptsize]{создает} (ServerConsole);
+		
+		\draw[dependency]
+		(handler) -- node[above, font=\scriptsize]{использует} (ServerConsole);
+		
+		\draw[dependency]
+		(datagram) -- node[right, font=\scriptsize]{вызывает} (handler);
+		
+		\draw[dependency]
+		(handler) -- node[above, font=\scriptsize]{выбирает} (command);
+		
+		\draw[dependency]
+		(handler) -- node[above, font=\scriptsize]{использует} (manager);
+		
+		\draw[dependency]
+		(manager) -- node[below, font=\scriptsize]{хранит} (command);
+		
+		\draw[relation]
+		(command) -- node[above, font=\scriptsize]{использует} (service);
+		
+		\draw[dependency]
+		(storage) -- node[right, font=\scriptsize]{загружает/сохраняет} (service);
+		
+		% ===================== Связи: UDP-обмен =====================
+		
+		\draw[dependency]
+		(datagram) -- node[right, font=\scriptsize]{использует} (DatagramTransfer);
+		
+		\draw[dependency]
+		(DatagramClient) -- node[right, font=\scriptsize]{использует} (DatagramTransfer);
+		
+		\draw[dependency]
+		(datagram) -- node[right, font=\scriptsize]{десериализует} (request);
+		
+		\draw[dependency]
+		(datagram) -- node[right, font=\scriptsize]{сериализует} (response);
+		
+		\draw[dependency]
+		(DatagramClient) -- node[above, font=\scriptsize]{сериализует} (request);
+		
+		\draw[dependency]
+		(DatagramClient) -- node[right, font=\scriptsize]{десериализует} (response);
+
+		
+	\end{tikzpicture}
+	
+\end{document}

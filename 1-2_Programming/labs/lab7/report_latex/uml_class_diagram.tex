@@ -1,0 +1,293 @@
+\documentclass[landscape,11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+
+\pagestyle{empty}
+% Высоты A4 недостаточно для двух симметричных частей диаграммы.
+\geometry{paperwidth=420mm,paperheight=297mm,left=12mm,right=12mm,top=10mm,bottom=10mm}
+
+\tikzset{
+	uml/.style={
+		draw,
+		rounded corners=1pt,
+		align=left,
+		font=\scriptsize,
+		text width=43mm,
+		inner sep=3pt,
+		minimum height=12mm
+	},
+	relation/.style={
+		-{Stealth[length=2mm]},
+		line width=.45pt
+	},
+	dependency/.style={
+		-{Stealth[length=2mm]},
+		dashed,
+		line width=.45pt
+	}
+}
+
+\begin{document}
+	\centering
+	\begin{tikzpicture}[x=1cm, y=0.7cm]
+		\node[font=\Large\bfseries] at (-1,6.5)
+		{UML-диаграмма классов клиент-серверного приложения};
+		
+		% ===================== Клиентская часть =====================
+		
+		% (бывший ClientMain на (-15,4) → опущен на -1 и перемещён на место ClientConsole)
+		\node[uml] (ClientMain) at (-15,-1)
+		{
+			\textbf{client::Main}\\
+			\hrulefill\\
+			+ main(String[]): void
+		};
+		
+		% (ClientConsole удалён; на его место поставлен ClientRunner)
+		\node[uml] (ClientRunner) at (-15,3)
+		{
+			\textbf{client::ClientRunner}\\
+			\hrulefill\\
+			- credentials: Credentials\\
+			- client: DatagramClient\\
+			+ run(), send(Request), authorize()
+		};
+		
+		\node[uml] (ClientCommandManager) at (-1,3)
+		{
+			\textbf{client::CommandManager}\\
+			\hrulefill\\
+			- commands: Map<String,\\
+			Command>\\
+			+ getCommands(): Map
+		};
+		
+		\node[uml] (DatagramClient) at (-8,-1)
+		{
+			\textbf{client::DatagramClient}\\
+			\hrulefill\\
+			- channel: DatagramChannel\\
+			- server: SocketAddress\\
+			+ request(Request): Response\\
+			+ close(): void
+		};
+		
+		\node[uml] (ClientCommand) at (-1,-1)
+		{
+			\textbf{client::commands::}\\
+			\textbf{Command}\\
+			\hrulefill\\
+			+ execute(argument, runner)\\
+			\hrulefill\\
+			Register, Login, Help, Add,\\
+			Update, ExecuteScript, \ldots
+		};
+		
+		% ===================== Общие классы =====================
+		
+		\node[uml] (DatagramTransfer) at (-8,-7)
+		{
+			\textbf{common::DatagramTransfer}\\
+			\hrulefill\\
+			+ send(channel, data, addr): void\\
+			+ receive(channel, timeout): ReceivedData\\
+			+ receiveAvailable(...): ReceivedData
+		};
+		
+		\node[uml] (request) at (-15,-7)
+		{
+			\textbf{common::Protocol.Request}\\
+			\hrulefill\\
+			- command: CommandType\\
+			- payload: Payload\\
+			- credentials: Credentials
+		};
+		
+		\node[uml] (response) at (-1,-7)
+		{
+			\textbf{common::Protocol.Response}\\
+			\hrulefill\\
+			- ok: boolean\\
+			- payload: Payload
+		};
+		
+		\node[uml] (Model) at (6,-7)
+		{
+			\textbf{common::Model.}\\
+			\textbf{SpaceMarine}\\
+			\hrulefill\\
+			- id, name, health\\
+			- coordinates: Coordinates\\
+			- creationDate: ZonedDateTime\\
+			- chapter: Chapter\\
+			+ compareTo(SpaceMarine)
+		};
+		
+		% ===================== Серверная часть =====================
+		
+		\node[uml] (ServerMain) at (-15,-14)
+		{
+			\textbf{server::Main}\\
+			\hrulefill\\
+			+ main(String[]): void
+		};
+		
+		\node[uml] (ServerConsole) at (-15,-20)
+		{
+			\textbf{server::ServerRunner}\\
+			\hrulefill\\
+			- console: Console\\
+			+ run(stopServer): void
+		};
+		
+		\node[uml] (datagram) at (-8,-14)
+		{
+			\textbf{server::DatagramServer}\\
+			\hrulefill\\
+			- channel: DatagramChannel\\
+			- sendingPool: ExecutorService\\
+			+ start(), run(), stop()\\
+			+ reader Thread, processor Thread\\
+			+ cached pool for responses
+		};
+		
+		\node[uml] (handler) at (-8,-20)
+		{
+			\textbf{managers::RequestHandler}\\
+			\hrulefill\\
+			- userRepository:\\
+			UserRepository\\
+			+ handle(Request): Response
+		};
+		
+		\node[uml] (command) at (-1,-14)
+		{
+			\textbf{commands::Command}\\
+			\hrulefill\\
+			+ apply(Request,\\
+			AuthenticatedUser)\\
+			\hrulefill\\
+			Add, Update, RemoveById,\\
+			Clear, RemoveLower, \ldots
+		};
+		
+		\node[uml] (service) at (6,-14)
+		{
+			\textbf{managers::}\\
+			\textbf{CollectionManager}\\
+			\hrulefill\\
+			- byId: ConcurrentMap\\
+			- collection: ConcurrentSkipListSet\\
+			- mutationLock: ReentrantLock\\
+			+ add(), update(), clear()\\
+			+ snapshot(), descending()
+		};
+		
+		\node[uml] (storage) at (6,-20)
+		{
+			\textbf{managers::}\\
+			\textbf{DatabaseManager}\\
+			\hrulefill\\
+			+ openConnection():\\
+			Connection\\
+			\textbf{MarineRepository}\\
+			\textbf{UserRepository}
+		};
+		
+		\node[uml] (manager) at (-1,-20)
+		{
+			\textbf{managers::}\\
+			\textbf{CommandManager}\\
+			\hrulefill\\
+			- commands: Map\\
+			- history: Deque\\
+			+ register(), getCommand()
+		};
+		
+		\node[uml] (postgres) at (13,-20)
+		{
+			\textbf{PostgreSQL}\\
+			\hrulefill\\
+			lab7\_users\\
+			lab7\_space\_marines\\
+			справочные таблицы
+		};
+		
+		% ===================== Связи: клиент =====================
+		
+		\draw[dependency]
+		(ClientMain) -- node[left, font=\scriptsize]{создаёт} (ClientRunner);
+		
+		\draw[dependency]
+		(ClientRunner) -- node[right, font=\scriptsize]{использует} (DatagramClient);
+		
+		\draw[dependency]
+		(ClientCommandManager) -- node[right, font=\scriptsize]{хранит} (ClientCommand);
+		
+		% Новые связи (как у сервера)
+		\draw[dependency]
+		(ClientMain) -- node[above, font=\scriptsize]{создаёт} (DatagramClient);
+		
+		\draw[dependency]
+		(DatagramClient) -- node[above, font=\scriptsize]{использует} (ClientCommandManager);
+		
+		% Связь ClientRunner → ClientCommand удалена по требованию
+		
+		% ===================== Связи: сервер =====================
+		
+		\draw[dependency]
+		(ServerMain) -- node[left, font=\scriptsize]{создаёт} (handler);
+		
+		\draw[dependency]
+		(ServerMain) -- node[above, font=\scriptsize]{запускает} (datagram);
+		
+		\draw[dependency]
+		(ServerMain) -- node[left, font=\scriptsize]{запускает} (ServerConsole);
+		
+		\draw[dependency]
+		(datagram) -- node[right, font=\scriptsize]{использует} (handler);
+		
+		\draw[dependency]
+		(handler) -- node[above, font=\scriptsize]{использует} (manager);
+		
+		\draw[dependency]
+		(manager) -- node[below, font=\scriptsize]{хранит} (command);
+		
+		\draw[relation]
+		(command) -- node[above, font=\scriptsize]{использует} (service);
+		
+		\draw[dependency]
+		(service) -- node[right, font=\scriptsize]{читает/изменяет} (storage);
+		
+		\draw[relation]
+		(storage) -- node[above, font=\scriptsize]{JDBC} (postgres);
+		
+		% ===================== Связи: UDP-обмен =====================
+		
+		\draw[dependency]
+		(datagram) -- node[right, font=\scriptsize]{использует} (DatagramTransfer);
+		
+		\draw[dependency]
+		(DatagramClient) -- node[right, font=\scriptsize]{использует} (DatagramTransfer);
+		
+		\draw[dependency]
+		(datagram) -- node[right, font=\scriptsize]{десериализует} (request);
+		
+		\draw[dependency]
+		(datagram) -- node[right, font=\scriptsize]{сериализует} (response);
+		
+		\draw[dependency]
+		(DatagramClient) -- node[above, font=\scriptsize]{сериализует} (request);
+		
+		\draw[dependency]
+		(DatagramClient) -- node[right, font=\scriptsize]{десериализует} (response);
+		
+		
+	\end{tikzpicture}
+	
+\end{document}

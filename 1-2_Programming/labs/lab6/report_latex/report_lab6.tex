@@ -1,0 +1,93 @@
+% Лабораторная работа № 6. Компиляция: make (или pdflatex report_lab6.tex дважды).
+\documentclass[a4paper,14pt]{extarticle}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{indentfirst}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{fancyvrb}
+\usepackage[hidelinks,unicode]{hyperref}
+
+\geometry{left=30mm,right=15mm,top=20mm,bottom=20mm}
+\onehalfspacing
+\setlength{\parindent}{12.5mm}
+\setlength{\parskip}{0pt}
+\renewcommand{\contentsname}{СОДЕРЖАНИЕ}
+\renewcommand{\refname}{СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ}
+\titleformat{\section}{\centering\bfseries\fontsize{14pt}{16pt}\selectfont}{\thesection}{1em}{}
+\titleformat{\subsection}{\bfseries\fontsize{14pt}{16pt}\selectfont}{\thesubsection}{1em}{}
+\titlespacing*{\section}{0pt}{12pt}{12pt}
+\titlespacing*{\subsection}{\parindent}{12pt}{6pt}
+\setlist{nosep}
+\setcounter{tocdepth}{2}
+\hypersetup{pdftitle={Отчёт по лабораторной работе № 6},pdfauthor={Студент группы P3113}}
+
+\begin{document}
+\begin{titlepage}
+\begin{center}
+Федеральное государственное автономное образовательное учреждение\\
+высшего образования\\
+\textbf{«Национальный исследовательский университет ИТМО»}\\[10mm]
+
+Факультет программной инженерии и компьютерной техники\\
+Дисциплина «Программирование»\\[34mm]
+
+{\large Лабораторная работа № 6}\\[4mm]
+Клиент-серверное приложение\\
+Вариант \textbf{9585}
+\end{center}
+
+\vfill
+\begin{flushright}
+Выполнил:\\
+Студент группы P3113
+Ушаков Роман Павлович\\[5mm]
+Проверил:\\
+Гиря Максим Дмитриевич
+
+\end{flushright}
+
+\vfill
+\begin{center}
+г. Санкт-Петербург\\ 2026
+\end{center}
+\end{titlepage}
+
+\setcounter{page}{2}
+\tableofcontents
+\newpage
+
+\section{Задание}
+
+Разделить программу из лабораторной работы №5 на клиентский и серверный модули. Серверный модуль должен осуществлять выполнение команд по управлению коллекцией. Клиентский модуль должен в интерактивном режиме считывать команды, передавать их для выполнения на сервер и выводить результаты выполнения.
+
+
+\section{Цель работы}
+
+Освоить построение простого клиент-серверного приложения на Java, передачу сериализованных объектов по UDP, использование неблокирующего ввода-вывода и разделение ответственности между клиентом, сервером и общим модулем.
+
+\section{Используемые средства}
+
+Язык реализации --- Java~17. Сборка выполняется Apache Maven. Для сохранения коллекции применяется библиотека Gson. В качестве транспорта используются классы \texttt{DatagramChannel} и \texttt{Selector} из пакета \texttt{java.nio.channels}.
+
+\section{Диаграмма классов UML}
+
+UML-диаграмма основных классов вынесена в отдельный файл \href{uml_class_diagram.pdf}{\texttt{uml\_class\_diagram.pdf}}. Исходник диаграммы в PlantUML находится в файле \texttt{uml\_class\_diagram.puml} рядом с данным документом.
+
+\section{Исходный код программы}
+
+Ввиду немалого размера проекта, его код и более подробное описание можно посмотреть на \href{https://gitlab.se.ifmo.ru/amoruch/programming_lab6}{gitlab}.
+
+\section{Результат работы программы}
+
+
+\end{document}
