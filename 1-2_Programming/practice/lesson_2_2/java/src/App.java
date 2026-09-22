@@ -1,3 +1,4 @@
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -105,8 +106,7 @@ public class App {
         System.out.println("\n4. Data streams и сериализация");
 
         byte[] numbers;
-        try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-             DataOutputStream output = new DataOutputStream(bytes)) {
+        try (ByteArrayOutputStream bytes = new ByteArrayOutputStream(); DataOutputStream output = new DataOutputStream(bytes)) {
             output.writeInt(42);
             output.writeUTF("Java");
             numbers = bytes.toByteArray();
@@ -117,8 +117,7 @@ public class App {
 
         Student student = new Student("Аня", 3111);
         byte[] serialized;
-        try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-             ObjectOutputStream output = new ObjectOutputStream(bytes)) {
+        try (ByteArrayOutputStream bytes = new ByteArrayOutputStream(); ObjectOutputStream output = new ObjectOutputStream(bytes)) {
             output.writeObject(student);
             serialized = bytes.toByteArray();
         }
@@ -168,5 +167,6 @@ public class App {
     }
 
     private record Student(String name, int group) implements Serializable {
+
     }
 }

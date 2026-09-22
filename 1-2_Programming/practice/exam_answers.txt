@@ -1,0 +1,181 @@
+Краткие ответы к экзамену по Java
+
+1. Обобщённые и параметризованные типы
+Generics задают тип как параметр: List<String> хранит только строки, а ошибки типа ловятся компилятором. Параметризованный класс объявляют так: class Box<T> { private T value; }; T заменяется конкретным типом при создании Box<Integer>. Из-за type erasure нельзя создать new T(), new T[] или проверить instanceof Box<String>.
+
+2. Параметризованные методы и ограничения
+Параметризованный метод объявляет тип перед возвращаемым типом: static <T> T first(List<T> list). Верхняя граница T extends Number ограничивает T этим типом и его наследниками. Wildcard ? extends T используют для чтения производителя, ? super T — для записи потребителю: PECS, Producer Extends, Consumer Super.
+
+3. Number, wrappers, автоупаковка
+Number — абстрактный предок числовых обёрток; его методы intValue(), longValue(), doubleValue() преобразуют число. Wrappers: Byte, Short, Integer, Long, Float, Double, Character, Boolean; они нужны в generics и могут быть null. Автоупаковка превращает int в Integer, автораспаковка — обратно; null при распаковке даёт NullPointerException, а wrappers сравнивают через equals(), не ==.
+
+4. Коллекции и List, Queue, Deque, Set, Map
+Collection — основа List, Set, Queue и Deque; Map стоит отдельно и хранит пары ключ-значение. List сохраняет порядок и допускает дубликаты, Set хранит уникальные элементы, Queue обычно FIFO, Deque работает с обоими концами. Map сопоставляет уникальный ключ значению.
+
+5. Iterable, Iterator, ListIterator
+Iterable имеет метод iterator() и позволяет использовать for-each. Iterator идёт вперёд через hasNext() и next(); удалять текущий элемент при обходе можно iterator.remove(). ListIterator работает со списком, умеет previous(), hasPrevious(), add(), set() и знает индексы.
+
+6. Comparable и Comparator
+Comparable<T> задаёт естественный порядок объекта методом compareTo(T). Comparator<T> задаёт внешний или альтернативный порядок методом compare(T, T), его удобно создавать через Comparator.comparing(). Результат сравнения: меньше нуля, ноль, больше нуля; для чисел лучше Integer.compare(), а не вычитание.
+
+7. Set, SortedSet, HashSet, TreeSet
+Set не допускает дубликаты по equals() и hashCode(). SortedSet задаёт отсортированный порядок; его обычная реализация TreeSet хранит элементы в дереве и работает примерно за O(log n). HashSet использует hash-таблицу, даёт среднее O(1) и не обещает порядок обхода.
+
+8. List, ArrayList, LinkedList
+List — упорядоченная коллекция с доступом по индексу и дубликатами. ArrayList — динамический массив: быстрый get(index), амортизированное добавление в конец, но вставка в середину сдвигает элементы. LinkedList — двусвязный список и Deque; доступ по индексу O(n), поэтому обычно ArrayList предпочтительнее.
+
+9. Map, SortedMap, HashMap, TreeMap
+Map хранит пары ключ-значение; основные методы put, get, remove, containsKey, keySet, values, entrySet. HashMap даёт среднее O(1), не обещает порядок и допускает один null-ключ. SortedMap задаёт порядок ключей; TreeMap реализует его деревом, требует сравнимых ключей или Comparator и даёт O(log n).
+
+10. Queue, Deque, PriorityQueue, ArrayDeque
+Queue обычно использует FIFO: offer добавляет, poll извлекает или возвращает null, peek смотрит первый элемент. Deque поддерживает addFirst/addLast и pollFirst/pollLast, поэтому подходит и для очереди, и для стека. PriorityQueue извлекает элемент с наивысшим приоритетом, обычно минимальный; ArrayDeque — быстрый стек и двусторонняя очередь без null-элементов.
+
+11. SequencedCollection, SequencedSet, HashSet, LinkedHashSet
+SequencedCollection из JDK 21 описывает определённый порядок встречи и методы getFirst(), getLast(), addFirst(), addLast(), reversed(). SequencedSet объединяет свойства Set и SequencedCollection. HashSet порядка не имеет и не является SequencedSet; LinkedHashSet сохраняет порядок вставки и реализует SequencedSet.
+
+12. Collections, Arrays, Objects
+Collections содержит алгоритмы и обёртки для коллекций: sort, reverse, shuffle, binarySearch, unmodifiableList. Arrays даёт sort, binarySearch, equals, copyOf, fill и asList для массивов. Objects содержит null-safe помощники requireNonNull, equals, hash и toString.
+
+13. Байтовые и символьные потоки
+InputStream и OutputStream читают и пишут байты: подходят для изображений, архивов и любых бинарных данных. Reader и Writer работают с символами и текстом. Типичные потомки: FileInputStream/FileOutputStream, FileReader/FileWriter, ByteArrayInputStream, StringReader; для текста нужно явно задавать UTF-8.
+
+14. Потоки-фильтры
+Фильтр оборачивает другой поток и добавляет поведение. BufferedReader добавляет буфер и readLine(), InputStreamReader превращает байтовый InputStream в символьный Reader с Charset, PrintStream печатает значения методами print/println/printf. Обычно создают цепочку, например new BufferedReader(new InputStreamReader(System.in, UTF_8)).
+
+15. System.in, System.out, System.err и Scanner
+System.in — стандартный ввод, System.out — обычный вывод, System.err — поток ошибок; out и err имеют тип PrintStream. Scanner разбирает текст на токены: hasNextInt(), nextInt(), nextLine(). После nextInt() обычно нужно отдельно прочитать оставшийся перевод строки через nextLine().
+
+16. Serializable и transient
+Serializable — маркерный интерфейс, разрешающий ObjectOutputStream записывать объектный граф. Достижимые поля-ссылки тоже должны быть serializable, иначе будет NotSerializableException. transient исключает поле из сериализации; после чтения оно получает значение по умолчанию.
+
+17. Path, File, Files, Paths
+File — старый объект пути; Path — современный интерфейс пути NIO.2, создаётся через Path.of(...) или Paths.get(...). Files содержит операции с файлами: exists, createDirectories, readString, writeString, copy, move, deleteIfExists, lines. Path поддерживает resolve, relativize, normalize и работу с файловыми системами.
+
+18. NIO: буферы, каналы, FileChannel
+Buffer хранит данные между программой и каналом: важны capacity, position, limit; типичный цикл put -> flip -> get -> clear/compact. Channel передаёт данные через буферы и может читать и писать. FileChannel работает с файлами, поддерживает позицию, transferTo/transferFrom, lock и отображение файла в память.
+
+19. JDBC: основные элементы
+JDBC — стандартный API Java для работы с реляционными БД через JDBC-драйвер. Обычный путь: DataSource или DriverManager -> Connection -> Statement/PreparedStatement -> ResultSet. JDBC переводит вызовы Java в протокол конкретного драйвера и возвращает SQLException при ошибке.
+
+20. DriverManager и Connection
+DriverManager выбирает зарегистрированный JDBC-драйвер и создаёт соединение getConnection(url, user, password). Connection представляет сессию с БД: создаёт statements, управляет транзакциями commit(), rollback(), setAutoCommit(false). В реальных приложениях чаще используют DataSource и пул соединений.
+
+21. Statement, PreparedStatement, CallableStatement
+Statement выполняет готовую строку SQL и не годится для пользовательских данных. PreparedStatement хранит SQL с ? и связывает значения setString(), setInt() и другими методами; это защита от SQL-инъекций и основа batch-запросов. CallableStatement extends PreparedStatement и вызывает хранимые процедуры, поддерживая IN, OUT и INOUT параметры.
+
+22. execute, executeQuery, executeUpdate
+executeQuery() выполняет SELECT и возвращает ResultSet. executeUpdate() выполняет INSERT, UPDATE, DELETE или DDL и возвращает число изменённых строк. execute() нужен, если заранее неизвестен тип результата: true означает ResultSet, false — update count или отсутствие результата; затем используют getResultSet(), getUpdateCount(), getMoreResults().
+
+23. ResultSet
+ResultSet — курсор результата; до первого next() он стоит перед первой строкой. next() перемещает курсор и возвращает false в конце. Значения читают getInt, getString, getObject по имени или номеру столбца; для nullable SQL-значений после примитивного getter проверяют wasNull().
+
+24. Thread, Runnable и состояния
+Runnable описывает задачу методом run(), Thread — объект потока; параллельную работу запускает start(), а прямой run() выполняется в текущем потоке. Состояния Thread.State: NEW, RUNNABLE, BLOCKED, WAITING, TIMED_WAITING, TERMINATED. Поток можно создать new Thread(runnable) или через Executor.
+
+25. Гонки, монитор и synchronized
+Гонка возникает, когда несколько потоков обращаются к общим изменяемым данным и хотя бы один пишет; counter++ не атомарен. synchronized захватывает монитор объекта или класса, делает критическую секцию взаимно исключающей и обеспечивает видимость изменений. Монитор реентерабелен: владелец может войти в тот же synchronized-блок повторно.
+
+26. Executor, ExecutorService, Callable, Future
+Executor имеет execute(Runnable) и отделяет постановку задачи от способа выполнения. ExecutorService расширяет его submit, shutdown, invokeAll и управление жизненным циклом. Callable<V> возвращает V и может бросить checked-исключение; Future<V> представляет будущий результат, get() ждёт, cancel() пытается отменить.
+
+27. Executors и пулы потоков
+Пул переиспользует потоки, поэтому не создаёт новый Thread на каждую задачу. Executors создаёт типовые пулы: newFixedThreadPool, newSingleThreadExecutor, newCachedThreadPool, newScheduledThreadPool, newVirtualThreadPerTaskExecutor. ExecutorService после работы завершают shutdown(), а затем при необходимости awaitTermination().
+
+28. volatile и happens-before
+Поток может держать значение в регистре или кэше, поэтому без синхронизации другой поток не обязан увидеть новую запись. volatile гарантирует видимость: запись в volatile happens-before последующего чтения того же поля. volatile не делает counter++ атомарным; для этого нужны synchronized, Lock или AtomicInteger.
+
+29. wait() и notify()
+wait(), notify() и notifyAll() принадлежат Object и вызываются только внутри synchronized по тому же монитору. wait() освобождает монитор и ждёт сигнала, notify() будит один ожидающий поток, notifyAll() — всех. Условие всегда проверяют в while, потому что возможны ложные пробуждения и конкурентные изменения.
+
+30. Lock, ReadWriteLock, Condition
+Lock даёт lock(), unlock(), tryLock(), lockInterruptibly(); основной класс — ReentrantLock, unlock обычно пишут в finally. ReadWriteLock разделяет readLock и writeLock, позволяя нескольким читателям работать одновременно. Condition создаётся через lock.newCondition() и даёт await(), signal(), signalAll() как более гибкий аналог wait/notify.
+
+31. Атомарные операции и AtomicInteger
+Атомарная операция видна как неделимая: нет промежуточного состояния для другого потока. Пакет java.util.concurrent.atomic использует CAS — compare-and-set. AtomicInteger поддерживает get, set, incrementAndGet, getAndIncrement, compareAndSet, getAndAdd; он подходит для простых счётчиков без общей критической секции.
+
+32. Потокобезопасные коллекции
+Collections.synchronizedList/Map/Set оборачивают обычную коллекцию одной блокировкой; при обходе её нужно синхронизировать вручную. ConcurrentHashMap, ConcurrentLinkedQueue, CopyOnWriteArrayList и BlockingQueue рассчитаны на конкурентный доступ и обычно масштабируются лучше. Их итераторы часто weakly consistent, а не fail-fast.
+
+33. Функциональные интерфейсы и лямбды
+Функциональный интерфейс имеет один абстрактный метод; лямбда — его компактная реализация. java.util.function содержит Predicate<T>, Function<T,R>, Consumer<T>, Supplier<T>, UnaryOperator<T>, BinaryOperator<T> и Bi-варианты. Лямбда может захватывать только final или effectively final локальные переменные.
+
+34. java.time
+java.time — современный неизменяемый и потокобезопасный API даты и времени. LocalDate, LocalTime, LocalDateTime не содержат часового пояса; Instant — точка на шкале времени; ZonedDateTime и ZoneId учитывают пояс. Duration измеряет время, Period — календарные даты, DateTimeFormatter форматирует и разбирает строки.
+
+35. Конвейеры и Stream API
+Stream — одноразовый ленивый конвейер, не коллекция и обычно не изменяет источник. Источники: collection.stream(), Stream.of(), Arrays.stream(), IntStream.range(), Files.lines(). Конвейер состоит из источника, промежуточных операций и одной терминальной операции; после терминальной поток использовать нельзя.
+
+36. Промежуточные, терминальные операции и Collectors
+Промежуточные операции возвращают Stream: filter, map, flatMap, sorted, distinct, limit, skip, peek. Терминальные запускают вычисление: forEach, count, reduce, collect, min, max, anyMatch. Collectors.toList(), toSet(), joining(), groupingBy(), partitioningBy(), counting(), averagingInt() собирают элементы в итоговую структуру.
+
+37. Рекурсия
+Рекурсивный метод вызывает себя для меньшей подзадачи. Нужны база рекурсии и шаг, приближающий к ней; пример — факториал, обход дерева или каталога. Глубокая рекурсия переполняет стек (StackOverflowError), а хвостовая рекурсия в Java не оптимизируется, поэтому линейные задачи часто пишут циклом.
+
+38. Pattern и Matcher
+Pattern — скомпилированное регулярное выражение, Matcher — его применение к конкретной строке. matches() требует совпадения всей строки, lookingAt() — начала, find() ищет следующее вхождение. Группы захвата получают group(n), а replaceAll()/replaceFirst() заменяют совпадения.
+
+39. Порождающие паттерны
+Порождающие паттерны управляют созданием объектов: Singleton — один экземпляр, Builder — пошаговая сборка, Factory Method — выбор продукта подклассом, Abstract Factory — совместимое семейство, Prototype — копирование образца, Object Pool — переиспользование дорогих объектов. Пример: HttpRequest.Builder создаёт настроенный неизменяемый запрос.
+
+40. Поведенческие паттерны
+Поведенческие паттерны распределяют алгоритмы и взаимодействия: Strategy заменяет алгоритм, Observer уведомляет подписчиков, Command превращает запрос в объект, Iterator обходит коллекцию, State меняет поведение по состоянию. Также входят Chain of Responsibility, Mediator, Memento, Template Method, Visitor, Interpreter, Null Object. Пример: слушатели событий GUI — вариант Observer.
+
+41. Структурные паттерны
+Структурные паттерны собирают объекты: Adapter меняет интерфейс, Decorator добавляет поведение обёрткой, Proxy контролирует доступ, Facade упрощает подсистему, Composite представляет дерево единым интерфейсом, Bridge отделяет абстракцию от реализации, Flyweight разделяет общее состояние. Пример Decorator: BufferedInputStream оборачивает InputStream и добавляет буферизацию.
+
+42. Интернационализация и локализация
+Интернационализация (i18n) — проектирование программы так, чтобы её можно было адаптировать к локалям; локализация (l10n) — сама адаптация языка, форматов, валют и текста. Строки хранят в ResourceBundle: Bundle.properties, Bundle_ru.properties, Bundle_ru_RU.properties. Код получает текст по ключу, а не хранит локализованную строку напрямую.
+
+43. Локализованное форматирование
+NumberFormat форматирует число, валюту и процент для Locale; DateFormat — старый API локализованных дат, DateTimeFormatter — современный. MessageFormat подставляет аргументы в шаблон, например {0}; ChoiceFormat выбирает фразу по числовому диапазону. Локаль лучше передавать явно, например Locale.forLanguageTag("ru-RU").
+
+44. Component, JComponent, Node
+Component — базовый визуальный объект AWT. JComponent — базовый класс большинства лёгких Swing-компонентов, например JButton, JLabel, JPanel. Node — базовый элемент графа сцены JavaFX; узел может быть контролом, фигурой, контейнером или группой.
+
+45. Container, JPanel, Parent, Region, Scene
+Container в AWT может содержать компоненты; JPanel — лёгкий Swing-контейнер для группировки. Parent в JavaFX может иметь дочерние Node, Region добавляет размеры и CSS-layout. Scene содержит корневой Node и связывается с окном Stage.
+
+46. Менеджеры компоновки
+Layout manager рассчитывает размеры и позиции компонентов, поэтому абсолютные координаты обычно не нужны. Swing: FlowLayout размещает подряд, BorderLayout — по пяти зонам, GridLayout — равную сетку, CardLayout — карточки, GridBagLayout — гибкую сетку. JavaFX-контейнеры HBox, VBox, BorderPane, GridPane, FlowPane и StackPane выполняют похожую роль.
+
+47. JFrame, SwingUtilities, Stage, Application
+JFrame — верхнеуровневое окно Swing. SwingUtilities.invokeLater запускает изменение Swing-UI в Event Dispatch Thread; это служебный класс, не контейнер. JavaFX Application имеет жизненный цикл init/start/stop, Stage — окно, Scene — его содержимое; запуск идёт через Application.launch().
+
+48. События и слушатели GUI
+Источник события хранит слушателей и вызывает их при действии пользователя. В Swing используют ActionListener, MouseListener, KeyListener и add...Listener; в JavaFX — EventHandler, setOnAction и лямбды. Долгая работа не должна выполняться в GUI-потоке, иначе интерфейс зависнет.
+
+49. AWT, Swing, JavaFX
+AWT использует нативные heavyweight-компоненты ОС. Swing построен поверх AWT, даёт лёгкие компоненты, Look&Feel и работает на Event Dispatch Thread. JavaFX — отдельная платформа с Scene Graph, CSS, FXML, binding и анимацией; обычно её выбирают для нового desktop GUI, Swing — для поддержки существующего.
+
+50. Reflection, Class и java.lang.reflect
+Reflection позволяет во время выполнения изучать и менять метаданные класса. Class<T> получают через T.class, object.getClass() или Class.forName(); он даёт поля, методы, конструкторы, интерфейсы и модификаторы. java.lang.reflect содержит Field, Method, Constructor, Array, Modifier, Proxy; setAccessible(true) обходить стоит только в инфраструктурном коде, потому что это ломает инкапсуляцию.
+
+51. Аннотации
+Аннотация — метаданные исходного кода, применяемые компилятором, фреймворком или reflection. @Retention задаёт время жизни SOURCE, CLASS или RUNTIME, @Target — допустимые элементы. Примеры: @Override, @Deprecated, @Test, @Table; runtime-аннотации читают getAnnotation() и isAnnotationPresent().
+
+52. Пароли и SQL-инъекции
+Пароли не хранят открытым текстом или как быстрый SHA-256: используют медленный парольный хеш Argon2id, bcrypt, scrypt или PBKDF2 с уникальной случайной солью. Секреты не кладут в исходники и логи. SQL-инъекции предотвращают PreparedStatement с параметрами, allow-list для идентификаторов, валидация ввода и минимальные права учётной записи БД.
+
+53. JPMS и провайдеры служб
+JPMS описывает модуль в module-info.java: requires — зависимость, exports — публичный пакет, opens — доступ для reflection. ServiceLoader находит реализации интерфейса во время работы. Провайдер указывает provides Service with Implementation, потребитель — uses Service; на classpath используется META-INF/services/полное.имя.Сервиса.
+
+54. Fork/join и ForkJoinPool
+ForkJoinPool предназначен для divide-and-conquer: задача делится через fork(), результаты собираются join(). RecursiveAction не возвращает результат, RecursiveTask<V> возвращает V. Work stealing позволяет свободному worker забрать подзадачу у занятого; это полезно для CPU-bound рекурсивных задач.
+
+55. Клиент-сервер, TCP и UDP
+Клиент инициирует запрос, сервер слушает порт и отвечает; IP задаёт хост, порт — процесс. TCP устанавливает соединение, передаёт упорядоченный поток байтов с контролем доставки, но не сохраняет границы сообщений. UDP отправляет независимые датаграммы без соединения; доставка, порядок и защита от дубликатов не гарантированы, зато накладные расходы ниже.
+
+56. Неблокирующий обмен и Selector
+В блокирующем I/O read, accept или receive ждут данных. В неблокирующем режиме канал сразу возвращает 0 или null, если результата пока нет. Selector позволяет одному потоку ждать готовность многих SelectableChannel; каналы регистрируют с OP_ACCEPT, OP_CONNECT, OP_READ, OP_WRITE и обрабатывают SelectionKey.
+
+57. TCP: Socket и ServerSocket
+Socket — клиентское TCP-соединение; через getInputStream() и getOutputStream() обмениваются байтами. ServerSocket привязывается к порту и accept() блокируется до клиента, возвращая отдельный Socket для общения с ним. Сервер обязан закрывать ServerSocket и каждый Socket через try-with-resources.
+
+58. UDP: DatagramChannel
+DatagramChannel — NIO-канал для UDP. Его открывают DatagramChannel.open(), привязывают bind(), отправляют send(ByteBuffer, address) и получают receive(ByteBuffer); он может работать блокирующе, неблокирующе и с Selector. UDP-сообщения сохраняют границы датаграмм.
+
+59. TCP: SocketChannel и ServerSocketChannel
+SocketChannel — NIO-аналог Socket, читает и пишет ByteBuffer, может быть blocking или non-blocking. ServerSocketChannel — NIO-аналог ServerSocket, принимает SocketChannel через accept(). В неблокирующем режиме эти каналы регистрируют в Selector для масштабируемого сервера.
+
+60. UDP: DatagramSocket и DatagramPacket
+DatagramSocket — классический UDP-сокет; DatagramPacket хранит массив байтов, длину и адрес назначения или отправителя. send(packet) отправляет датаграмму, receive(packet) ждёт следующую. Получатель должен быть готов к потере, дубликатам и изменению порядка пакетов.

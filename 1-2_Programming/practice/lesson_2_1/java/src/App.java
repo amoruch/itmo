@@ -1,3 +1,4 @@
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -148,5 +149,6 @@ public class App {
     }
 
     private record Pair<T, U>(T first, U second) {
+
     }
 }
