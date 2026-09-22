@@ -1,18 +1,18 @@
+; hello.asm 
+
 section .data
-	msg db "Hello world!", 10
-	msg_len equ $ - msg
+    message: db  'hello, world!', 10
 
 section .text
-	global _start
+    global _start
 
 _start:
-	mov rax, 1
-	mov rdi, 1
-	mov rsi, msg
-	mov rdx, msg_len
-	syscall
+    mov     rax, 1           ; 'write' syscall number
+    mov     rdi, 1           ; stdout descriptor
+    mov     rsi, message     ; string address
+    mov     rdx, 14          ; string length in bytes
+    syscall
 
-	mov rax, 60
-	mov rdi, 0
-	syscall
-
+    mov     rax, 60          ; 'exit' syscall number
+    xor     rdi, rdi
+    syscall
