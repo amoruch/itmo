@@ -1,4 +1,2 @@
-nasm -f elf64 hello.asm -o hello.o
-gcc -nostdlib hello.o -o hello
-./hello
-
+nasm -g hello.asm -felf64 -o hello.o
+ld -o hello hello.o
