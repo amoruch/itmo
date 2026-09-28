@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ru"> 
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html">
+        
+    <title>Лабораторная №1</title>
+
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+</head>
+<body onload="draw();">
+
+    <table class="main-layout">
+        <tr class="header-row">
+            <td colspan="2">
+                <div class="student-info">
+                    <h1>Ушаков Роман Павлович</h1>
+                    <p>Группа: <span>P3213</span></p>
+                    <p>Вариант: <span>12708</span></p>
+                </div>
+            </td>
+        </tr>
+        
+        <tr class="content-row">
+            <td>
+                <canvas id="canvas" width="300" height="300"></canvas>
+            </td>
+            <td>
+                <form id="coordinates-form" class="user-form" onsubmit="handleFormSubmit(event);">
+                    <label for="X">Введите X (от -5 до 3):</label>
+                    <input type="text" id="X" class="input-field" placeholder="Пример: 1" value="1">
+                    
+                    <label for="Y">Введите Y (от -5 до 5):</label>
+                    <input type="text" id="Y" class="input-field" placeholder="Пример: 2" value="2">
+                    
+                    <label for="R">Введите R (от 1 до 4):</label>
+                    <input type="text" id="R" class="input-field" placeholder="Пример: 3" value="3">
+                    
+                    <button type="submit" class="submit-btn" style="margin-top: 15px; padding: 8px 15px; cursor: pointer;">Проверить точку</button>
+                    
+                    <div id="error-message" style="color: red; font-weight: bold; margin-top: 10px; font-size: 14px; min-height: 20px;"></div>
+                </form>
+            </td>
+        </tr>
+
+        <tr class="result-row">
+            
+        </tr>
+    </table>
+
+</body>
+</html>
