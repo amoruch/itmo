@@ -1,7 +1,5 @@
-// Ключ, под которым храним историю в LocalStorage
 const STORAGE_KEY = 'lab1_results';
 
-// === Инициализация после загрузки страницы ===
 window.onload = function () {
     const form = document.getElementById('coordinates-form');
     if (form) {
@@ -13,21 +11,16 @@ window.onload = function () {
         clearBtn.addEventListener('click', clearHistory);
     }
 
-    // Восстанавливаем историю из LocalStorage
     loadHistory();
-
-    // Начальная отрисовка (значения по умолчанию из HTML)
     draw(0, 2, 3);
 };
 
-// === Обработчик отправки формы ===
 function handleFormSubmit(event) {
     event.preventDefault();
 
     const errorDiv = document.getElementById("error-message");
     errorDiv.innerText = "";
 
-    // 1. Получаем X из радиокнопок
     const xRadio = document.querySelector('input[name="X"]:checked');
     if (!xRadio) {
         errorDiv.innerText = "Ошибка: Выберите значение X!";
@@ -35,7 +28,6 @@ function handleFormSubmit(event) {
     }
     const X = Number(xRadio.value);
 
-    // 2. Получаем Y и R из текстовых полей
     const rawY = document.getElementById("Y").value.trim().replace(',', '.');
     const rawR = document.getElementById("R").value.trim().replace(',', '.');
 
@@ -47,7 +39,6 @@ function handleFormSubmit(event) {
     const Y = Number(rawY);
     const R = Number(rawR);
 
-    // 3. Валидация
     if (isNaN(Y) || Y < -5 || Y > 5) {
         errorDiv.innerText = "Ошибка: Y должен быть числом в диапазоне от -5 до 5!";
         return;
@@ -57,11 +48,8 @@ function handleFormSubmit(event) {
         return;
     }
 
-    // 4. Проверяем попадание
     const hit = checkHit(X, Y, R);
 
-    // 5. Формируем запись. Время сохраняем в UTC (ISO) — при смене
-    //    часового пояса устройства отображение пересчитается корректно.
     const record = {
         x: X,
         y: Y,
@@ -70,33 +58,29 @@ function handleFormSubmit(event) {
         time: new Date().toISOString()
     };
 
-    // 6. Сохраняем в LocalStorage и вставляем строку в начало таблицы
     saveResult(record);
     const tbody = document.getElementById('results-body');
     tbody.prepend(createRowElement(record));
 
-    // 7. Перерисовываем Canvas
     draw(X, Y, R);
 }
 
-// === Проверка попадания в область ===
 function checkHit(x, y, r) {
-    // 1. Четверть круга в I четверти
+    // сегмент круга
     if (x >= 0 && y >= 0) {
         return (x * x + y * y) <= (r * r);
     }
-    // 2. Прямоугольник в III четверти: [-R/2, 0] × [-R, 0]
+    // прямоугольник
     if (x <= 0 && y <= 0) {
         return (x >= -r / 2) && (y >= -r);
     }
-    // 3. Треугольник в IV четверти: ниже прямой y = x - R
+    // треугольник
     if (x >= 0 && y <= 0) {
         return y >= x - r;
     }
     return false;
 }
 
-// === LocalStorage: сохранение и загрузка ===
 function saveResult(record) {
     const results = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
     results.push(record);
@@ -110,7 +94,6 @@ function loadHistory() {
     tbody.innerHTML = '';
     const results = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
-    // Новые записи — сверху, поэтому идём с конца массива
     [...results].reverse().forEach(record => {
         tbody.appendChild(createRowElement(record));
     });
@@ -122,13 +105,8 @@ function clearHistory() {
     document.getElementById('results-body').innerHTML = '';
 }
 
-// === Создание <tr> из записи ===
 function createRowElement(record) {
     const row = document.createElement('tr');
-
-    // Дата и время отображаются в локали клиента (ru-RU).
-    // Хранится ISO-строка в UTC, поэтому при смене часового пояса
-    // тот же самый момент времени отобразится в новом поясе.
     const timeString = new Date(record.time).toLocaleString('ru-RU');
 
     row.innerHTML = `
@@ -144,7 +122,6 @@ function createRowElement(record) {
     return row;
 }
 
-// === Отрисовка Canvas (без изменений) ===
 function draw(x, y, r) {
     const canvas = document.getElementById("canvas");
     if (!canvas) return;
@@ -155,8 +132,6 @@ function draw(x, y, r) {
     const originX = width / 2;
     const originY = height / 2;
 
-    // Фиксированное смещение фигуры от центра — размер фигуры визуально
-    // не зависит от R, а штрихи R, R/2, -R/2, -R стоят на месте.
     const maxExtent = Math.min(width, height) / 2 - 30;
     const scale = maxExtent / r;
 

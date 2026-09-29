@@ -1,4 +1,3 @@
-/* === Наследование: базовый шрифт задаётся на body и наследуется всеми потомками === */
 body {
     font-family: 'Segoe UI', Arial, sans-serif;
     background-color: #eef4fb;
@@ -7,23 +6,19 @@ body {
     padding: 0;
 }
 
-/* === Основной макет: таблица на всю страницу === */
 table.main-layout {
     width: 100%;
     border-collapse: collapse;
 }
 
-/* === Шапка === */
 table.main-layout>tbody>tr.header-row>td {
     background-color: #ffffff;
     padding: 20px 40px;
     border-bottom: 3px solid #4a90e2;
     width: 100%;
-    /* растягиваем ячейку на всю ширину */
     box-sizing: border-box;
 }
 
-/* Flex-контейнер: слева — ФИО+группа, справа — вариант */
 .header-inner {
     display: flex;
     justify-content: space-between;
@@ -36,7 +31,6 @@ table.main-layout>tbody>tr.header-row>td {
 .header-left {
     display: flex;
     align-items: baseline;
-    /* выравниваем по базовой линии текста */
     gap: 20px;
     flex-wrap: wrap;
 }
@@ -46,10 +40,8 @@ table.main-layout>tbody>tr.header-row>td {
     white-space: nowrap;
 }
 
-/* Требование по заданию: fantasy, свой цвет, свой размер — только для ФИО */
 .header-left h1 {
     font-family: fantasy;
-    /* требование */
     color: #1f3a5f;
     font-size: 30px;
     margin: 0;
@@ -57,7 +49,6 @@ table.main-layout>tbody>tr.header-row>td {
     line-height: 1.1;
 }
 
-/* Группа — справа от ФИО, на той же базовой линии */
 .header-group {
     font-size: 16px;
     color: #4a6b8a;
@@ -69,12 +60,10 @@ table.main-layout>tbody>tr.header-row>td {
     font-weight: bold;
 }
 
-/* === Средний блок: Canvas + Форма === */
 table.main-layout>tbody>tr.content-row {
     vertical-align: top;
 }
 
-/* Селектор дочернего элемента: только прямые td среднего ряда */
 .content-row>td {
     padding: 30px 40px;
     vertical-align: top;
@@ -89,7 +78,6 @@ table.main-layout>tbody>tr.content-row {
     width: 45%;
 }
 
-/* Canvas */
 #canvas {
     border: 2px solid #c7d8ec;
     border-radius: 6px;
@@ -97,11 +85,9 @@ table.main-layout>tbody>tr.content-row {
     box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15);
 }
 
-/* === Форма === */
 .form-table {
     border-collapse: collapse;
     width: auto;
-    /* по содержимому, а не на всю ширину */
 }
 
 .form-table td {
@@ -111,20 +97,16 @@ table.main-layout>tbody>tr.content-row {
     text-align: left;
 }
 
-/* Селектор дочернего элемента — первая колонка формы */
 .form-table>tbody>tr>td:first-child {
     font-weight: bold;
     color: #2c5c8f;
     white-space: nowrap;
 }
 
-/* Поля ввода: отступы в процентах — требование задания */
 .input-field {
     width: 90%;
     padding: 2%;
-    /* в процентах — требование */
     margin: 1%;
-    /* в процентах */
     border: 1px solid #c7d8ec;
     border-radius: 4px;
     font-size: 15px;
@@ -132,13 +114,11 @@ table.main-layout>tbody>tr.content-row {
     transition: border-color 0.25s, box-shadow 0.25s;
 }
 
-/* Псевдоэлемент ::placeholder */
 .input-field::placeholder {
     color: #a3b8cc;
     font-style: italic;
 }
 
-/* Псевдокласс :focus */
 .input-field:focus {
     border-color: #4a90e2;
     outline: none;
@@ -146,7 +126,6 @@ table.main-layout>tbody>tr.content-row {
     background-color: #fff;
 }
 
-/* Радиокнопки X */
 .radio-group {
     line-height: 1.9;
     text-align: left;
@@ -159,20 +138,17 @@ table.main-layout>tbody>tr.content-row {
     color: #2c5c8f;
 }
 
-/* Псевдокласс :hover для меток радиокнопок */
 .radio-group label:hover {
     color: #4a90e2;
     font-weight: bold;
 }
 
-/* Ячейка с кнопкой — кнопка слева */
 .submit-cell {
     text-align: left;
     padding-top: 14px;
     padding-left: 0;
 }
 
-/* Кнопка "Проверить точку" */
 .submit-btn {
     background-color: #4a90e2;
     color: #fff;
@@ -186,17 +162,14 @@ table.main-layout>tbody>tr.content-row {
     transition: background-color 0.25s, transform 0.1s;
 }
 
-/* Псевдокласс :hover */
 .submit-btn:hover {
     background-color: #357abd;
 }
 
-/* Псевдокласс :active */
 .submit-btn:active {
     transform: scale(0.97);
 }
 
-/* Сообщение об ошибке */
 .error-message {
     color: #d9534f;
     font-weight: bold;
@@ -206,14 +179,12 @@ table.main-layout>tbody>tr.content-row {
     font-size: 14px;
 }
 
-/* === Нижний блок: таблица результатов === */
 table.main-layout>tbody>tr.result-row>td {
     background-color: #ffffff;
     padding: 20px 40px 40px;
     border-top: 3px solid #4a90e2;
 }
 
-/* Таблица истории — узкая, слева */
 #results-table {
     width: 50%;
     min-width: 480px;
@@ -236,22 +207,18 @@ table.main-layout>tbody>tr.result-row>td {
     letter-spacing: 0.4px;
 }
 
-/* Псевдоэлемент ::first-letter для заголовков таблицы истории */
 #results-table thead th::first-letter {
     font-size: 1.2em;
 }
 
-/* Псевдокласс :nth-child — чередование строк */
 #results-table tbody tr:nth-child(even) {
     background-color: #f3f8fd;
 }
 
-/* Псевдокласс :hover для строк истории */
 #results-table tbody tr:hover {
     background-color: #e6f0fb;
 }
 
-/* Обёртка: таблица слева, кнопка справа */
 .result-wrapper {
     display: flex;
     align-items: flex-start;
@@ -259,12 +226,10 @@ table.main-layout>tbody>tr.result-row>td {
     flex-wrap: wrap;
 }
 
-/* Убеждаемся, что таблица не растягивается во flex-контейнере */
 .result-wrapper #results-table {
     flex: 0 0 auto;
 }
 
-/* Кнопка очистки */
 .clear-btn {
     background-color: #e57373;
     color: #fff;
