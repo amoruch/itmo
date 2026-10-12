@@ -1,9 +1,14 @@
-global _start
-
 section .bss
     num_buf: resb 64
 
 section .text
+extern parse_int
+extern print_int
+extern print_newline
+extern read_word
+extern exit
+
+global _start
 _start:
     xor     r12, r12            ; sum = 0
 

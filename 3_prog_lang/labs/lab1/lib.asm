@@ -194,7 +194,7 @@ read_word:
     ret
 .success:
     pop     rax             ; возвращаем адрес начала буфера
-    mov     [rdi+rdx], 0
+    mov     byte [rdi+rdx], 0
     ret
 
  

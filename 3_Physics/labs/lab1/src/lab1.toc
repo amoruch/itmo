@@ -1,0 +1,13 @@
+\babel@toc {russian}{}\relax 
+\contentsline {section}{\numberline {1}Цель работы}{3}{section.1}%
+\contentsline {section}{\numberline {2}Задачи}{3}{section.2}%
+\contentsline {section}{\numberline {3}Объект исследования}{3}{section.3}%
+\contentsline {section}{\numberline {4}Метод экспериментального исследования}{3}{section.4}%
+\contentsline {section}{\numberline {5}Измерительные приборы}{3}{section.5}%
+\contentsline {section}{\numberline {6}Рабочие формулы и обработка результатов}{4}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Основные расчётные формулы}{4}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Результаты измерений}{5}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Данные для построения гистограммы}{7}{subsection.6.3}%
+\contentsline {subsection}{\numberline {6.4}Проверка нормальности распределения}{8}{subsection.6.4}%
+\contentsline {subsection}{\numberline {6.5}Итоговая погрешность результата}{10}{subsection.6.5}%
+\contentsline {section}{\numberline {7}Вывод}{10}{section.7}%
