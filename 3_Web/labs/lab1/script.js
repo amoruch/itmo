@@ -18,7 +18,31 @@ window.onload = function () {
 
     loadHistory();
     draw(0, 2, 3);
+
+    fetchCat();
+    setInterval(fetchCat, 5000);
 };
+
+// https://http.cat -- not available(
+async function fetchCat() {
+    const catImg = document.getElementById('cat-img');
+    const ids = [100, 101, 102, 103, 200, 202, 204, 308, 400, 404, 413, 418, 419, 421, 425];
+    let randomId = ids[Math.floor(Math.random() * ids.length)];
+
+    catImg.src = `cats/cat${randomId}.jpeg`;
+    /* 
+    const API_URL = "https://http.cat/images/${randomId}.jpg";
+
+    try {
+        const response = await fetch(API_URL);
+        const data = await response.json();
+        
+        catImg.src = data[0].url;
+    } catch (error) {
+        console.error('Ошибка при загрузке котика:', error);
+    } 
+    */
+}
 
 function handleFormSubmit(event) {
     event.preventDefault();
