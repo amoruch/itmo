@@ -126,21 +126,28 @@ table.main-layout>tbody>tr.content-row {
     background-color: #fff;
 }
 
-.radio-group {
+.x-btn-group {
     line-height: 1.9;
     text-align: left;
 }
 
-.radio-group label {
+.x-btn {
     margin-right: 8px;
     font-size: 14px;
+    background-color: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 1px;
     cursor: pointer;
-    color: #2c5c8f;
+    transition: background-color 0.25s, transform 0.1s;
 }
 
-.radio-group label:hover {
-    color: #4a90e2;
-    font-weight: bold;
+.x-btn:hover {
+    background-color: #357abd;
+}
+
+.x-btn.active {
+    background-color: #1f5fa0;
 }
 
 .submit-cell {

@@ -11,6 +11,11 @@ window.onload = function () {
         clearBtn.addEventListener('click', clearHistory);
     }
 
+    const list = document.querySelectorAll(".x-btn");
+    list.forEach(btn => {
+        btn.addEventListener("click", handleXButton);
+    });
+
     loadHistory();
     draw(0, 2, 3);
 };
@@ -21,24 +26,23 @@ function handleFormSubmit(event) {
     const errorDiv = document.getElementById("error-message");
     errorDiv.innerText = "";
 
-    const xRadio = document.querySelector('input[name="X"]:checked');
-    if (!xRadio) {
-        errorDiv.innerText = "Ошибка: Выберите значение X!";
-        return;
-    }
-    const X = Number(xRadio.value);
-
+    const rawX = document.getElementById("X").value.trim().replace(',', '.');
     const rawY = document.getElementById("Y").value.trim().replace(',', '.');
     const rawR = document.getElementById("R").value.trim().replace(',', '.');
 
-    if (rawY === "" || rawR === "") {
+    if (rawX === "" || rawY === "" || rawR === "") {
         errorDiv.innerText = "Ошибка: Все поля должны быть заполнены!";
         return;
     }
 
+    const X = Number(rawX);
     const Y = Number(rawY);
     const R = Number(rawR);
 
+    if (isNaN(X) || X < -5 || X > 3) {
+        errorDiv.innerText = "Ошибка: X должен быть числом в диапазоне от -5 до 3!";
+        return;
+    }
     if (isNaN(Y) || Y < -5 || Y > 5) {
         errorDiv.innerText = "Ошибка: Y должен быть числом в диапазоне от -5 до 5!";
         return;
@@ -63,6 +67,16 @@ function handleFormSubmit(event) {
     tbody.prepend(createRowElement(record));
 
     draw(X, Y, R);
+}
+
+function handleXButton(event) {
+    event.preventDefault();
+
+    const value = Number(event.target.value);
+    document.getElementById("X").value = value;
+
+    document.querySelectorAll(".x-btn").forEach(btn => btn.classList.remove("active"));
+    event.target.classList.add("active");
 }
 
 function checkHit(x, y, r) {
