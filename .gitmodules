@@ -1,3 +1,21 @@
 [submodule "3_Web/labs/web_prog_lab1"]
 	path = 3_Web/labs/web_prog_lab1
 	url = https://gitlab.se.ifmo.ru/amoruch/web_prog_lab1
+[submodule "1-2_Programming/labs/lab1"]
+	path = 1-2_Programming/labs/lab1
+	url = https://gitlab.se.ifmo.ru/amoruch/programming_lab1
+[submodule "1-2_Programming/labs/lab2"]
+	path = 1-2_Programming/labs/lab2
+	url = https://gitlab.se.ifmo.ru/amoruch/programming_lab2
+[submodule "1-2_Programming/labs/lab3-4"]
+	path = 1-2_Programming/labs/lab3-4
+	url = https://gitlab.se.ifmo.ru/amoruch/programming_lab3-4
+[submodule "1-2_Programming/labs/lab5"]
+	path = 1-2_Programming/labs/lab5
+	url = https://gitlab.se.ifmo.ru/amoruch/programming_lab5
+[submodule "1-2_Programming/labs/lab6"]
+	path = 1-2_Programming/labs/lab6
+	url = https://gitlab.se.ifmo.ru/amoruch/programming_lab6
+[submodule "1-2_Programming/labs/lab7"]
+	path = 1-2_Programming/labs/lab7
+	url = https://gitlab.se.ifmo.ru/amoruch/programming_lab7
