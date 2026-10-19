@@ -19,3 +19,9 @@
 [submodule "1-2_Programming/labs/lab7"]
 	path = 1-2_Programming/labs/lab7
 	url = https://gitlab.se.ifmo.ru/amoruch/programming_lab7
+[submodule "3_prog_lang/labs/lab1"]
+	path = 3_prog_lang/labs/lab1
+	url = https://gitlab.se.ifmo.ru/amoruch/assignment-1-io-library
+[submodule "3_prog_lang/labs/lab2"]
+	path = 3_prog_lang/labs/lab2
+	url = https://gitlab.se.ifmo.ru/amoruch/assignment-2-dictionary
